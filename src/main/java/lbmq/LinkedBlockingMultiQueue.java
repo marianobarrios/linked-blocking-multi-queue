@@ -1,0 +1,892 @@
+/*
+ * Derived from work made by Doug Lea with assistance from members of JCP JSR-166 Expert Group
+ * (https://jcp.org/en/jsr/detail?id=166). The original work is in the public domain, as explained at
+ * http://creativecommons.org/publicdomain/zero/1.0/
+ */
+package lbmq;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.NoSuchElementException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.ConcurrentHashMap;
+
+/**
+ * <p>
+ * An optionally-bounded blocking "multi-queue" based on linked nodes. A multi-queue is actually a set of queues that
+ * are connected at the heads and have independent tails (the head of the queue is that element that has been on the
+ * queue the longest time. The tail of the queue is that element that has been on the queue the shortest time). New
+ * elements are added at the tail of one of the queues, and the queue retrieval operations obtain elements from the head
+ * of some of the queues, according to a policy that is described below.
+ * </p>
+ *
+ * <p>
+ * This class essentially allows a consumer to efficiently block a single thread on a set of queues, until one becomes
+ * available. The special feature is that individual queues can be enabled or disabled. A disabled queue is not
+ * considered for polling (in the event that all the queue are disabled, any blocking operation would do so trying to
+ * read, as if all the queues were empty). Elements are taken from the set of enabled queues, obeying the established
+ * priority (queues with the same priority are served round robin).
+ * </p>
+ * 
+ * <p>
+ * A disabled queue accepts new elements normally until it reaches the maximum capacity (if any).
+ * </p>
+ * 
+ * <p>
+ * Individual queues can be added, removed, enabled or disabled at any time.
+ * </p>
+ * 
+ * <p>
+ * The optional capacity bound constructor argument serves as a way to prevent excessive queue expansion. The capacity,
+ * if unspecified, is equal to Int.MaxVaue. Linked nodes are dynamically created upon each insertion unless this would
+ * bring the queue above capacity.
+ * </p>
+ * 
+ * <p>
+ * Not being actually a linear queue, this class does not implement the {@code Collection} or {@code Queue} interfaces.
+ * The traditional queue interface is split in the traits: {@code Offerable} and {@code Pollable}. Sub-queues, do
+ * implement Collection.
+ * </p>
+ * 
+ */
+public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
+
+	private ConcurrentHashMap<K, SubQueue> subQueues = new ConcurrentHashMap<K, SubQueue>();
+
+	/** Lock held by take, poll, etc */
+	private ReentrantLock takeLock = new ReentrantLock();
+
+	/** Wait queue for waiting takes */
+	private Condition notEmpty = takeLock.newCondition();
+
+	/** Current number of elements in enabled sub-queues */
+	private AtomicInteger totalCount = new AtomicInteger();
+
+	private LinkedList<PriorityGroup> priorityGroups = new LinkedList<PriorityGroup>();
+
+	/**
+	 * Set of sub-queues with the same priority
+	 */
+	private class PriorityGroup {
+
+		final int priority;
+		final ArrayList<SubQueue> queues = new ArrayList<SubQueue>(0);
+
+		PriorityGroup(int priority) {
+			this.priority = priority;
+		}
+
+		int nextIdx = 0;
+
+		void addQueue(SubQueue subQueue) {
+			queues.add(subQueue);
+			subQueue.priorityGroup = this;
+		}
+
+		void removeQueue(SubQueue removed) {
+			Iterator<SubQueue> it = queues.iterator();
+			while (it.hasNext()) {
+				SubQueue subQueue = it.next();
+				if (subQueue.key == removed.key) {
+					removed.putLock.lock();
+					try {
+						if (nextIdx == queues.size())
+							nextIdx = 0;
+						it.remove();
+						if (subQueue.enabled)
+							totalCount.getAndAdd(-removed.size());
+						return;
+					} finally {
+						removed.putLock.unlock();
+					}
+				}
+			}
+		}
+
+		DequeResult dequeue() {
+			// assert takeLock.isHeldByCurrentThread();
+			int startIdx = nextIdx;
+			do {
+				SubQueue child = queues.get(nextIdx);
+				nextIdx += 1;
+				if (nextIdx == queues.size())
+					nextIdx = 0;
+				if (child.enabled && child.size() > 0)
+					return new DequeResult(child, child.dequeue());
+			} while (nextIdx != startIdx);
+			return null;
+		}
+
+		int drainTo(Collection<? super E> c, int maxElements) {
+			// assert takeLock.isHeldByCurrentThread();
+			int drained = 0;
+			int emptyQueues = 0;
+			do {
+				SubQueue child = queues.get(nextIdx);
+				nextIdx += 1;
+				if (nextIdx == queues.size())
+					nextIdx = 0;
+				if (child.enabled && child.size() > 0) {
+					emptyQueues = 0;
+					c.add(child.dequeue());
+					drained += 1;
+					int oldSize = child.count.getAndDecrement();
+					if (oldSize == child.capacity)
+						child.signalNotFull();
+				} else {
+					emptyQueues += 1;
+				}
+			} while (drained < maxElements && emptyQueues < queues.size());
+			return drained;
+		}
+
+		E peek() {
+			// assert takeLock.isHeldByCurrentThread();
+			int startIdx = nextIdx;
+			do {
+				SubQueue child = queues.get(nextIdx);
+				if (child.enabled && child.size() > 0) {
+					return child.head.next.item;
+				} else {
+					nextIdx += 1;
+					if (nextIdx == queues.size())
+						nextIdx = 0;
+				}
+			} while (nextIdx != startIdx);
+			return null;
+		}
+	}
+
+	/**
+	 * Add a sub queue if absent
+	 *
+	 * @param key
+	 *            the key used to identify the queue
+	 * @param priority
+	 *            the queue priority, a lower number means higher priority
+	 * @return true is the new queue was added, false if the supplied key already exists
+	 */
+	public boolean addSubQueue(K key, int priority) {
+		return addSubQueue(key, priority, Integer.MAX_VALUE);
+	}
+
+	/**
+	 * Add a sub-queue if absent
+	 *
+	 * @param key
+	 *            the key used to identify the queue
+	 * @param priority
+	 *            the queue priority, a lower number means higher priority
+	 * @param capacity
+	 *            the capacity of the new sub-queue
+	 * @return true is the new queue was a added, false if the supplied key already exists
+	 */
+	public boolean addSubQueue(K key, int priority, int capacity) {
+		SubQueue subQueue = new SubQueue(key, capacity);
+		takeLock.lock();
+		try {
+			SubQueue old = subQueues.putIfAbsent(key, subQueue);
+			if (old == null) {
+				int i = 0;
+				Iterator<PriorityGroup> it = priorityGroups.iterator();
+				while (it.hasNext()) {
+					PriorityGroup pg = it.next();
+					if (pg.priority == priority) {
+						pg.addQueue(subQueue);
+					} else if (pg.priority > priority) {
+						PriorityGroup newPg = new PriorityGroup(priority);
+						priorityGroups.add(i, newPg);
+						newPg.addQueue(subQueue);
+					}
+					i += 1;
+				}
+				PriorityGroup newPg = new PriorityGroup(priority);
+				priorityGroups.add(newPg);
+				newPg.addQueue(subQueue);
+			}
+			return old == null;
+		} finally {
+			takeLock.unlock();
+		}
+	}
+
+	/**
+	 * Remove a sub-queue
+	 * 
+	 * @param key
+	 *            the key f the sub-queue that should be removed
+	 * @return the removed SubQueue or null if the key was not in the map
+	 */
+	public SubQueue removeSubQueue(K key) {
+		takeLock.lock();
+		try {
+			SubQueue removed = subQueues.remove(key);
+			if (removed != null)
+				removed.priorityGroup.removeQueue(removed);
+			return removed;
+		} finally {
+			takeLock.unlock();
+		}
+	}
+
+	/**
+	 * Gets a sub-queue
+	 * 
+	 * @param key
+	 *            the key f the sub-queue that should be returned
+	 * @return the sub-queue with the corresponding key or null if it does not exist
+	 */
+	public SubQueue getSubQueue(K key) {
+		return subQueues.get(key);
+	}
+
+	/**
+	 * Signals a waiting take. Called only from put/offer (which do not otherwise ordinarily lock takeLock.)
+	 */
+	private void signalNotEmpty() {
+		takeLock.lock();
+		try {
+			notEmpty.signal();
+		} finally {
+			takeLock.unlock();
+		}
+	}
+
+	public E poll(long timeout, TimeUnit unit) throws InterruptedException {
+		long remaining = unit.toNanos(timeout);
+		DequeResult dequeResult;
+		int oldSize;
+		takeLock.lockInterruptibly();
+		try {
+			while (totalCount.get() == 0) {
+				if (remaining <= 0)
+					return null;
+				remaining = notEmpty.awaitNanos(remaining);
+			}
+			// at this point we know there is an element
+			dequeResult = deque();
+			oldSize = dequeResult.subQueue.count.getAndDecrement();
+			if (totalCount.getAndDecrement() > 1) {
+				// sub-queue still has elements, notify next poller
+				notEmpty.signal();
+			}
+		} finally {
+			takeLock.unlock();
+		}
+		if (oldSize == dequeResult.subQueue.capacity) {
+			// we just took an element from a full queue, notify any blocked offers
+			dequeResult.subQueue.signalNotFull();
+		}
+		return dequeResult.element;
+	}
+
+	public E take() throws InterruptedException {
+		DequeResult dequeResult;
+		int oldSize;
+		takeLock.lockInterruptibly();
+		try {
+			while (totalCount.get() == 0) {
+				notEmpty.await();
+			}
+			// at this point we know there is an element
+			dequeResult = deque();
+			oldSize = dequeResult.subQueue.count.getAndDecrement();
+			if (totalCount.getAndDecrement() > 1) {
+				// sub-queue still has elements, notify next poller
+				notEmpty.signal();
+			}
+		} finally {
+			takeLock.unlock();
+		}
+		if (oldSize == dequeResult.subQueue.capacity) {
+			// we just took an element from a full queue, notify any blocked offers
+			dequeResult.subQueue.signalNotFull();
+		}
+		return dequeResult.element;
+	}
+
+	public E poll() {
+		if (totalCount.get() == 0)
+			return null;
+		DequeResult dequeResult;
+		int oldSize;
+		takeLock.lock();
+		try {
+			if (totalCount.get() == 0)
+				return null;
+			// at this point we know there is an element
+			dequeResult = deque();
+			oldSize = dequeResult.subQueue.count.getAndDecrement();
+			if (totalCount.getAndDecrement() > 1) {
+				// sub-queue still has elements, notify next poller
+				notEmpty.signal();
+			}
+		} finally {
+			takeLock.unlock();
+		}
+		if (oldSize == dequeResult.subQueue.capacity) {
+			// we just took an element from a full queue, notify any blocked offers
+			dequeResult.subQueue.signalNotFull();
+		}
+		return dequeResult.element;
+	}
+
+	public E peek() {
+		if (totalCount.get() == 0)
+			return null;
+		takeLock.lock();
+		try {
+			if (totalCount.get() == 0)
+				return null;
+			else
+				return peekImpl();
+		} finally {
+			takeLock.unlock();
+		}
+	}
+
+	/**
+	 * Returns the total size of this mult-queue, that is, the sum of the sizes of all the enabled sub-queues.
+	 * 
+	 * @return the total size of this multi-queue
+	 */
+	public int totalSize() {
+		return totalCount.get();
+	}
+
+	/**
+	 * Returns whether this multi-queue is empty, that is, whether there is any element ready to be taken from the head.
+	 * 
+	 * @return whether this multi-queue is empty.
+	 */
+	public boolean isEmpty() {
+		return totalSize() == 0;
+	}
+
+	private class DequeResult {
+		public final SubQueue subQueue;
+		public final E element;
+
+		public DequeResult(SubQueue subQueue, E element) {
+			this.subQueue = subQueue;
+			this.element = element;
+		}
+	}
+
+	private DequeResult deque() {
+		// assert takeLock.isHeldByCurrentThread();
+		DequeResult dequed = null;
+		Iterator<PriorityGroup> it = priorityGroups.iterator();
+		while (it.hasNext() && dequed == null) {
+			dequed = it.next().dequeue();
+		}
+		return dequed;
+	}
+
+	private E peekImpl() {
+		// assert takeLock.isHeldByCurrentThread();
+		E dequed = null;
+		Iterator<PriorityGroup> it = priorityGroups.iterator();
+		while (it.hasNext() && dequed == null) {
+			dequed = it.next().peek();
+		}
+		return dequed;
+	}
+
+	public int drainTo(Collection<? super E> c) {
+		return drainTo(c, Integer.MAX_VALUE);
+	}
+
+	public int drainTo(Collection<? super E> c, int maxElements) {
+		if (c == null)
+			throw new NullPointerException();
+		if (c == this)
+			throw new IllegalArgumentException();
+		if (maxElements <= 0)
+			return 0;
+		takeLock.lock();
+		try {
+			int n = Math.min(maxElements, totalCount.get());
+			// ordered iteration, begin with lower index (highest priority)
+			int drained = 0;
+			Iterator<PriorityGroup> it = priorityGroups.iterator();
+			while (it.hasNext() && drained < n) {
+				drained += it.next().drainTo(c, n - drained);
+			}
+			// assert drained == n;
+			totalCount.getAndAdd(-drained);
+			return drained;
+		} finally {
+			takeLock.unlock();
+		}
+	}
+
+	/**
+	 * Represent a sub-queue inside a multi-queue. Instances of this class are just like any blocking queue except that
+	 * elements cannot be taken from their heads.
+	 */
+	public class SubQueue extends AbstractOfferable<E> {
+
+		private final K key;
+		private final int capacity;
+		private PriorityGroup priorityGroup;
+
+		private SubQueue(K key, int capacity) {
+			if (capacity <= 0)
+				throw new IllegalArgumentException();
+			this.key = key;
+			this.capacity = capacity;
+		}
+
+		private ReentrantLock putLock = new ReentrantLock();
+		private Condition notFull = putLock.newCondition();
+
+		private AtomicInteger count = new AtomicInteger();
+		private boolean enabled = true;
+
+		public int remainingCapacity() {
+			return capacity - count.get();
+		}
+
+		/**
+		 * Head of linked list. Invariant: head.item == null
+		 */
+		private Node<E> head = new Node<E>(null);
+
+		/**
+		 * Tail of linked list. Invariant: last.next == null
+		 */
+		private Node<E> last = head;
+
+		/**
+		 * Atomically removes all of the elements from this queue. The queue will be empty after this call returns.
+		 */
+		public void clear() {
+			fullyLock();
+			try {
+				Node<E> h = head;
+				Node<E> p = h.next;
+				while (p != null) {
+					h.next = h;
+					p.item = null; // help GC
+					h = p;
+					p = h.next;
+				}
+				head = last;
+				int oldCapacity = count.getAndSet(0);
+				if (oldCapacity == capacity)
+					notFull.signal();
+				if (enabled)
+					totalCount.getAndAdd(-oldCapacity);
+			} finally {
+				fullyUnlock();
+			}
+		}
+
+		/**
+		 * Enable or disable this sub-queue. Enabled queues's elements are taken from the common head of the
+		 * multi-queue. Elements from disabled queues are never taken. Elements can be added to a queue regardless of
+		 * this status (if there is enough remaining capacity).
+		 * 
+		 * @param status
+		 *            true to enable, false to disable
+		 */
+		public void enable(boolean status) {
+			fullyLock();
+			try {
+				enabled = status;
+				if (status) {
+					// potentially unblock waiting polls
+					int c = count.get();
+					if (c > 0) {
+						totalCount.getAndAdd(c);
+						notEmpty.signal();
+					}
+				} else {
+					totalCount.getAndAdd(-count.get());
+				}
+			} finally {
+				fullyUnlock();
+			}
+		}
+
+		/**
+		 * Returns whether this sub-queue is enabled
+		 * 
+		 * @return true is this sub-queue is enabled, false if is disabled.
+		 */
+		public boolean isEnabled() {
+			takeLock.lock();
+			try {
+				return enabled;
+			} finally {
+				takeLock.unlock();
+			}
+		}
+
+		private void signalNotFull() {
+			putLock.lock();
+			try {
+				notFull.signal();
+			} finally {
+				putLock.unlock();
+			}
+		}
+
+		private void enqueue(Node<E> node) {
+			last.next = node;
+			last = node;
+		}
+
+		/**
+		 * Return the number of elements in this sub queue. This method returns the actual number of elements,
+		 * regardless of whether the queue is enabled or not.
+		 */
+		public int size() {
+			return count.get();
+		}
+
+		/**
+		 * Return whether the queue is empty. This method bases its return value in the actual number of elements,
+		 * regardless of whether the queue is enabled or not.
+		 */
+		public boolean isEmpty() {
+			return size() == 0;
+		}
+
+		public void put(E e) throws InterruptedException {
+			if (e == null)
+				throw new NullPointerException();
+			long oldSize = -1;
+			putLock.lockInterruptibly();
+			try {
+				while (count.get() == capacity) {
+					notFull.await();
+				}
+				enqueue(new Node<E>(e));
+				if (count.getAndIncrement() + 1 < capacity) {
+					// queue not full after adding, notify next offerer
+					notFull.signal();
+				}
+				if (enabled)
+					oldSize = totalCount.getAndIncrement();
+			} finally {
+				putLock.unlock();
+			}
+			if (oldSize == 0) {
+				// just added an element to an empty queue, notify pollers
+				signalNotEmpty();
+			}
+			return;
+		}
+
+		public boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException {
+			if (e == null)
+				throw new NullPointerException();
+			long nanos = unit.toNanos(timeout);
+			long oldSize = -1;
+			putLock.lockInterruptibly();
+			try {
+				while (count.get() == capacity) {
+					if (nanos <= 0)
+						return false;
+					nanos = notFull.awaitNanos(nanos);
+				}
+				enqueue(new Node<E>(e));
+				if (count.getAndIncrement() + 1 < capacity) {
+					// queue not full after adding, notify next offerer
+					notFull.signal();
+				}
+				if (enabled)
+					oldSize = totalCount.getAndIncrement();
+			} finally {
+				putLock.unlock();
+			}
+			if (oldSize == 0) {
+				// just added an element to an empty queue, notify pollers
+				signalNotEmpty();
+			}
+			return true;
+		}
+
+		public boolean offer(E e) {
+			if (e == null)
+				throw new NullPointerException();
+			long oldSize = -1;
+			putLock.lock();
+			try {
+				if (count.get() == capacity)
+					return false;
+				enqueue(new Node<E>(e));
+				if (count.getAndIncrement() + 1 < capacity) {
+					// queue not full after adding, notify next offerer
+					notFull.signal();
+				}
+				if (enabled)
+					oldSize = totalCount.getAndIncrement();
+			} finally {
+				putLock.unlock();
+			}
+			if (oldSize == 0) {
+				// just added an element to an empty queue, notify pollers
+				signalNotEmpty();
+			}
+			return true;
+		}
+
+		public boolean remove(Object o) {
+			if (o == null)
+				return false;
+			fullyLock();
+			try {
+				for (Node<E> trail = head, p = trail.next; p != null; trail = p, p = p.next) {
+					if (o.equals(p.item)) {
+						unlink(p, trail);
+						return true;
+					}
+				}
+				return false;
+			} finally {
+				fullyUnlock();
+			}
+		}
+
+		public boolean contains(Object o) {
+			if (o == null)
+				return false;
+			fullyLock();
+			try {
+				for (Node<E> p = head.next; p != null; p = p.next)
+					if (o.equals(p.item))
+						return true;
+				return false;
+			} finally {
+				fullyUnlock();
+			}
+		}
+
+		/**
+		 * Unlinks interior Node p with predecessor trail.
+		 */
+		void unlink(Node<E> p, Node<E> trail) {
+			// assert isFullyLocked();
+			// p.next is not changed, to allow iterators that are traversing p to maintain their weak-consistency
+			// guarantee.
+			p.item = null;
+			trail.next = p.next;
+			if (last == p)
+				last = trail;
+			if (count.getAndDecrement() == capacity)
+				notFull.signal();
+			if (enabled)
+				totalCount.getAndDecrement();
+		}
+
+		/**
+		 * Locks to prevent both puts and takes.
+		 */
+		private void fullyLock() {
+			takeLock.lock();
+			putLock.lock();
+		}
+
+		/**
+		 * Unlocks to allow both puts and takes.
+		 */
+		private void fullyUnlock() {
+			putLock.unlock();
+			takeLock.unlock();
+		}
+
+		/**
+		 * Tells whether both locks are held by current thread.
+		 */
+		// private boolean isFullyLocked() {
+		// return putLock.isHeldByCurrentThread() && takeLock.isHeldByCurrentThread();
+		// }
+
+		/**
+		 * Removes a node from head of queue.
+		 * 
+		 * @return the node
+		 */
+		private E dequeue() {
+			// assert takeLock.isHeldByCurrentThread();
+			// assert size() > 0;
+			Node<E> h = head;
+			Node<E> first = h.next;
+			h.next = h; // help GC
+			head = first;
+			E x = first.item;
+			first.item = null;
+			return x;
+		}
+
+		public String toString() {
+			fullyLock();
+			try {
+				Node<E> p = head.next;
+				if (p == null)
+					return "[]";
+
+				StringBuilder sb = new StringBuilder();
+				sb.append('[');
+				for (;;) {
+					E e = p.item;
+					sb.append(e == this ? "(this Collection)" : e);
+					p = p.next;
+					if (p == null)
+						return sb.append(']').toString();
+					sb.append(',').append(' ');
+				}
+			} finally {
+				fullyUnlock();
+			}
+		}
+
+		public Object[] toArray() {
+			fullyLock();
+			try {
+				int size = count.get();
+				Object[] a = new Object[size];
+				int k = 0;
+				for (Node<E> p = head.next; p != null; p = p.next)
+					a[k++] = p.item;
+				return a;
+			} finally {
+				fullyUnlock();
+			}
+		}
+
+		@SuppressWarnings("unchecked")
+		public <T> T[] toArray(T[] a) {
+			fullyLock();
+			try {
+				int size = count.get();
+				if (a.length < size)
+					a = (T[]) java.lang.reflect.Array.newInstance(a.getClass().getComponentType(), size);
+				int k = 0;
+				for (Node<E> p = head.next; p != null; p = p.next)
+					a[k++] = (T) p.item;
+				if (a.length > k)
+					a[k] = null;
+				return a;
+			} finally {
+				fullyUnlock();
+			}
+		}
+
+		/**
+		 * Returns an iterator over the elements in this queue in proper sequence. The elements will be returned in
+		 * order from first (head) to last (tail).
+		 *
+		 * <p>
+		 * The returned iterator is <a href="package-summary.html#Weakly"><i>weakly consistent</i></a>.
+		 *
+		 * @return an iterator over the elements in this queue in proper sequence
+		 */
+		public Iterator<E> iterator() {
+			return new Itr();
+		}
+
+		private class Itr implements Iterator<E> {
+			/*
+			 * Basic weakly-consistent iterator.  At all times hold the next
+			 * item to hand out so that if hasNext() reports true, we will
+			 * still have it to return even if lost race with a take, etc.
+			 */
+
+			private Node<E> current;
+			private Node<E> lastRet;
+			private E currentElement;
+
+			Itr() {
+				fullyLock();
+				try {
+					current = head.next;
+					if (current != null)
+						currentElement = current.item;
+				} finally {
+					fullyUnlock();
+				}
+			}
+
+			public boolean hasNext() {
+				return current != null;
+			}
+
+			/**
+			 * Returns the next live successor of p, or null if no such.
+			 *
+			 * Unlike other traversal methods, iterators need to handle both: - dequeued nodes (p.next == p) - (possibly
+			 * multiple) interior removed nodes (p.item == null)
+			 */
+			private Node<E> nextNode(Node<E> p) {
+				for (;;) {
+					Node<E> s = p.next;
+					if (s == p)
+						return head.next;
+					if (s == null || s.item != null)
+						return s;
+					p = s;
+				}
+			}
+
+			public E next() {
+				fullyLock();
+				try {
+					if (current == null)
+						throw new NoSuchElementException();
+					E x = currentElement;
+					lastRet = current;
+					current = nextNode(current);
+					currentElement = (current == null) ? null : current.item;
+					return x;
+				} finally {
+					fullyUnlock();
+				}
+			}
+
+			public void remove() {
+				if (lastRet == null)
+					throw new IllegalStateException();
+				fullyLock();
+				try {
+					Node<E> node = lastRet;
+					lastRet = null;
+					for (Node<E> trail = head, p = trail.next; p != null; trail = p, p = p.next) {
+						if (p == node) {
+							unlink(p, trail);
+							break;
+						}
+					}
+				} finally {
+					fullyUnlock();
+				}
+			}
+		}
+
+	}
+
+	private static class Node<E> {
+
+		E item;
+
+		/**
+		 * One of: - the real successor Node - this Node, meaning the successor is head.next - null, meaning there is no
+		 * successor (this is the last node)
+		 */
+		Node<E> next = null;
+
+		Node(E item) {
+			this.item = item;
+		}
+
+	}
+
+}
