@@ -49,13 +49,50 @@ import java.util.concurrent.ConcurrentHashMap;
  * 
  * <p>
  * Not being actually a linear queue, this class does not implement the {@code Collection} or {@code Queue} interfaces.
- * The traditional queue interface is split in the traits: {@code Offerable} and {@code Pollable}. Sub-queues, do
+ * The traditional queue interface is split in the traits: {@code Offerable} and {@code Pollable}. Sub-queues do however
  * implement Collection.
  * </p>
  * 
  */
 public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
 
+	/*
+	 * This implementation is inspired by the LinkedBlockingQueue, made by Doug Lea with assistance from members of JCP
+	 * JSR-166 Expert Group (https://jcp.org/en/jsr/detail?id=166).
+	 * 
+	 * Each sub-queue uses, as does the LinkedBlockingQueue, a variant of the "two lock queue" algorithm. The putLock
+	 * gates entry to put (and offer), and has an associated condition for waiting puts. The takeLock is, on the other
+	 * hand, unique and shared among all the sub-queues.
+	 * 
+	 * Each subqueue has a "count" field, that is maintained as an atomic to avoid needing to get both locks in most
+	 * cases. Also, to minimize need for puts to get takeLock and vice-versa, cascading notifies are used. When a put
+	 * notices that it has enabled at least one take, it signals taker. That taker in turn signals others if more items
+	 * have been entered since the signal. And symmetrically for takes signalling puts.
+	 * 
+	 * The posibility of disabling sub-queues introduces the necessity of an additional centralized atomic count field,
+	 * which is also updated in every operation and represents, at any time, how many elements can be taken before
+	 * exhausting the queue.
+	 * 
+	 * Operations such as remove(Object) and iterators acquire both the corresponding putLock and the takeLock.
+	 * 
+	 * Visibility between writers and readers is provided as follows:
+	 * 
+	 * Whenever an element is enqueued, the putLock is acquired and count updated. A subsequent reader guarantees
+	 * visibility to the enqueued Node by either acquiring the putLock (via fullyLock) or by acquiring the takeLock, and
+	 * then reading n = count.get(); this gives visibility to the first n items.
+	 * 
+	 * To implement weakly consistent iterators, it appears we need to keep all Nodes GC-reachable from a predecessor
+	 * dequeued Node. That would cause two problems:
+	 * 
+	 * - allow a rogue Iterator to cause unbounded memory retention
+	 * 
+	 * - cause cross-generational linking of old Nodes to new Nodes if a Node was tenured while live, which generational
+	 * GCs have a hard time dealing with, causing repeated major collections. However, only non-deleted Nodes need to be
+	 * reachable from dequeued Nodes, and reachability does not necessarily have to be of the kind understood by the GC.
+	 * We use the trick of linking a Node that has just been dequeued to itself. Such a self-link implicitly means to
+	 * advance to head.next.
+	 */
+	
 	private ConcurrentHashMap<K, SubQueue> subQueues = new ConcurrentHashMap<K, SubQueue>();
 
 	/** Lock held by take, poll, etc */
