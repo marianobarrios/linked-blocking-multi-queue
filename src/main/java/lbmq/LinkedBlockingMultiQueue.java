@@ -600,6 +600,11 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
 			if (e == null)
 				throw new NullPointerException();
 			long oldSize = -1;
+			/*
+			 * As this method never fails to insert, it is more efficient to pre-create the node outside the lock, to 
+			 * reduce contention
+			 */
+			Node<E> node = new Node<E>(e);
 			putLock.lockInterruptibly();
 			try {
 				/*
@@ -611,7 +616,7 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
 				while (count.get() == capacity) {
 					notFull.await();
 				}
-				enqueue(new Node<E>(e));
+				enqueue(node);
 				if (count.getAndIncrement() + 1 < capacity) {
 					// queue not full after adding, notify next offerer
 					notFull.signal();
@@ -661,6 +666,8 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
 			if (e == null)
 				throw new NullPointerException();
 			long oldSize = -1;
+			if (count.get() == capacity)
+	            return false;
 			putLock.lock();
 			try {
 				if (count.get() == capacity)
@@ -838,10 +845,9 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
 		}
 
 		private class Itr implements Iterator<E> {
-			/*
-			 * Basic weakly-consistent iterator.  At all times hold the next
-			 * item to hand out so that if hasNext() reports true, we will
-			 * still have it to return even if lost race with a take, etc.
+			/**
+			 * Basic weakly-consistent iterator. At all times hold the next item to hand out so that if hasNext()
+			 * reports true, we will still have it to return even if lost race with a take, etc.
 			 */
 
 			private Node<E> current;
