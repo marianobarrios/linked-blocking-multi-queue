@@ -37,9 +37,9 @@ shared among all the sub-queues.
 Each subqueue has a "count" field, that is maintained as an atomic to avoid needing to get both locks in most cases.
 Also, to minimize need for puts to get takeLock and vice-versa, cascading notifies are used. When a put notices that it
 has enabled at  least one take, it signals taker. That taker in turn signals others if more items have been entered
-since the signal. And symmetrically for takes signalling puts.
+since the signal. And symmetrically for takes signaling puts.
 
-The posibility of disabling sub-queues introduces the necessity of an additional centralized atomic count field, which
+The possibility of disabling sub-queues introduces the necessity of an additional centralized atomic count field, which
 is also updated in every operation and represents, at any time, how many elements can be taken before exhausting the
 queue.
      

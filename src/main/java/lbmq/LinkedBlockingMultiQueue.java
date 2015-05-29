@@ -67,9 +67,9 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
 	 * Each subqueue has a "count" field, that is maintained as an atomic to avoid needing to get both locks in most
 	 * cases. Also, to minimize need for puts to get takeLock and vice-versa, cascading notifies are used. When a put
 	 * notices that it has enabled at least one take, it signals taker. That taker in turn signals others if more items
-	 * have been entered since the signal. And symmetrically for takes signalling puts.
+	 * have been entered since the signal. And symmetrically for takes signaling puts.
 	 * 
-	 * The posibility of disabling sub-queues introduces the necessity of an additional centralized atomic count field,
+	 * The possibility of disabling sub-queues introduces the necessity of an additional centralized atomic count field,
 	 * which is also updated in every operation and represents, at any time, how many elements can be taken before
 	 * exhausting the queue.
 	 * 
@@ -92,7 +92,7 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
 	 * We use the trick of linking a Node that has just been dequeued to itself. Such a self-link implicitly means to
 	 * advance to head.next.
 	 */
-	
+
 	private ConcurrentHashMap<K, SubQueue> subQueues = new ConcurrentHashMap<K, SubQueue>();
 
 	/** Lock held by take, poll, etc */
@@ -602,6 +602,12 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
 			long oldSize = -1;
 			putLock.lockInterruptibly();
 			try {
+				/*
+				 * Note that count is used in wait guard even though it is not protected by lock. This works because
+				 * count can only decrease at this point (all other puts are shut out by lock), and we (or some other
+				 * waiting put) are signaled if it ever changes from capacity. Similarly for all other uses of count in
+				 * other wait guards.
+				 */
 				while (count.get() == capacity) {
 					notFull.await();
 				}
