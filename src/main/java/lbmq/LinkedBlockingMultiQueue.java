@@ -93,18 +93,18 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
 	 * advance to head.next.
 	 */
 
-	private ConcurrentHashMap<K, SubQueue> subQueues = new ConcurrentHashMap<K, SubQueue>();
+	private final ConcurrentHashMap<K, SubQueue> subQueues = new ConcurrentHashMap<K, SubQueue>();
 
 	/** Lock held by take, poll, etc */
-	private ReentrantLock takeLock = new ReentrantLock();
+	private final ReentrantLock takeLock = new ReentrantLock();
 
 	/** Wait queue for waiting takes */
-	private Condition notEmpty = takeLock.newCondition();
+	private final Condition notEmpty = takeLock.newCondition();
 
 	/** Current number of elements in enabled sub-queues */
-	private AtomicInteger totalCount = new AtomicInteger();
+	private final AtomicInteger totalCount = new AtomicInteger();
 
-	private LinkedList<PriorityGroup> priorityGroups = new LinkedList<PriorityGroup>();
+	private final LinkedList<PriorityGroup> priorityGroups = new LinkedList<PriorityGroup>();
 
 	/**
 	 * Set of sub-queues with the same priority
@@ -480,10 +480,10 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
 			this.capacity = capacity;
 		}
 
-		private ReentrantLock putLock = new ReentrantLock();
-		private Condition notFull = putLock.newCondition();
+		private final ReentrantLock putLock = new ReentrantLock();
+		private final Condition notFull = putLock.newCondition();
 
-		private AtomicInteger count = new AtomicInteger();
+		private final AtomicInteger count = new AtomicInteger();
 		private boolean enabled = true;
 
 		public int remainingCapacity() {
@@ -926,9 +926,11 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
 
 		E item;
 
-		/**
-		 * One of: - the real successor Node - this Node, meaning the successor is head.next - null, meaning there is no
-		 * successor (this is the last node)
+		/*
+		 * One of: 
+		 * - the real successor Node 
+		 * - this Node, meaning the successor is head.next 
+		 * - null, meaning there is no successor (this is the last node)
 		 */
 		Node<E> next = null;
 
