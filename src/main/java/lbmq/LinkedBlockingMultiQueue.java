@@ -195,9 +195,9 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
 	 *            the key used to identify the queue
 	 * @param priority
 	 *            the queue priority, a lower number means higher priority
-	 * @return true is the new queue was added, false if the supplied key already exists
+	 * @return the previous queue associated with the specified key, or {@code null} if there was no queue for the key
 	 */
-	public boolean addSubQueue(K key, int priority) {
+	public SubQueue addSubQueue(K key, int priority) {
 		return addSubQueue(key, priority, Integer.MAX_VALUE);
 	}
 
@@ -210,9 +210,9 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
 	 *            the queue priority, a lower number means higher priority
 	 * @param capacity
 	 *            the capacity of the new sub-queue
-	 * @return true is the new queue was a added, false if the supplied key already exists
+	 * @return the previous queue associated with the specified key, or {@code null} if there was no queue for the key
 	 */
-	public boolean addSubQueue(K key, int priority, int capacity) {
+	public SubQueue addSubQueue(K key, int priority, int capacity) {
 		SubQueue subQueue = new SubQueue(key, capacity);
 		takeLock.lock();
 		try {
@@ -235,7 +235,7 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
 				priorityGroups.add(newPg);
 				newPg.addQueue(subQueue);
 			}
-			return old == null;
+			return old;
 		} finally {
 			takeLock.unlock();
 		}
