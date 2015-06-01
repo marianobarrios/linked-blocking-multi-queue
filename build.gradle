@@ -3,7 +3,7 @@ apply plugin: 'eclipse'
 apply plugin: 'maven'
 apply plugin: 'signing'
 
-group = 'org.github.marianobarrios'
+group = 'com.github.marianobarrios'
 version = '0.1.0'
 
 repositories {
