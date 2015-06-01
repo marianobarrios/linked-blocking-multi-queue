@@ -18,20 +18,21 @@ A disabled queue accepts new elements normally until it reaches the maximum capa
 Individual queues can be added, removed, enabled or disabled at any time.
 
 The optional capacity bound constructor argument serves as a way to prevent excessive queue expansion. The capacity, if
-unspecified, is equal to Int.MaxVaue. Linked nodes are dynamically created upon each insertion unless this would bring
+unspecified, is equal to `Int.MaxVaue`. Linked nodes are dynamically created upon each insertion unless this would bring
 the queue above capacity.
  
-Not being actually a linear queue, this class does not implement the Collection or Queue interfaces. The traditional
-queue interface is split in the traits: Offerable and Pollable. Sub-queues do however implement Collection.
+Not being actually a linear queue, this class does not implement the `Collection` or `Queue` interfaces. The traditional
+queue interface is split in the traits: `Offerable` and `Pollable`. Sub-queues do however implement Collection.
 
 Implementation notes
 --------------------
 
-This implementation is inspired by the LinkedBlockingQueue, made by Doug Lea with assistance from members of JCP 
-JSR-166 Expert Group (https://jcp.org/en/jsr/detail?id=166).
+This implementation is inspired by the
+[LinkedBlockingQueue](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/LinkedBlockingQueue.html), made by
+Doug Lea with assistance from members of [JCP JSR-166 Expert Group](https://jcp.org/en/jsr/detail?id=166).
  
-Each sub-queue uses, as does the LinkedBlockingQueue, a variant of the "two lock queue" algorithm. The putLock gates entry 
-to put (and offer), and has an associated condition for waiting puts. The takeLock is, on the other hand, unique and 
+Each sub-queue uses, as does the `LinkedBlockingQueue`, a variant of the "two lock queue" algorithm. The `putLock` gates entry 
+to `put` (and `offer`), and has an associated condition for waiting puts. The `takeLock`, on the other hand, is unique and 
 shared among all the sub-queues.
 
 Each subqueue has a "count" field, that is maintained as an atomic to avoid needing to get both locks in most cases.
@@ -43,13 +44,13 @@ The possibility of disabling sub-queues introduces the necessity of an additiona
 is also updated in every operation and represents, at any time, how many elements can be taken before exhausting the
 queue.
      
-Operations such as remove(Object) and iterators acquire both the corresponding putLock and the takeLock.
+Operations such as `remove(Object)` and iterators acquire both the corresponding putLock and the takeLock.
      
 Visibility between writers and readers is provided as follows:
  
-Whenever an element is enqueued, the putLock is acquired and count updated. A subsequent reader guarantees visibility 
-to the enqueued Node by either acquiring the putLock (via fullyLock) or by acquiring the takeLock, and then reading 
-n = count.get(); this gives visibility to the first n items.
+Whenever an element is enqueued, the `putLock` is acquired and count updated. A subsequent reader guarantees visibility 
+to the enqueued Node by either acquiring the `putLock` (via `fullyLock`) or by acquiring the `takeLock`, and then reading 
+`n = count.get()`; this gives visibility to the first `n` items.
     
 To implement weakly consistent iterators, it appears we need to keep all Nodes GC-reachable from a predecessor dequeued 
 Node. That would cause two problems:
@@ -59,5 +60,5 @@ Node. That would cause two problems:
  - cause cross-generational linking of old Nodes to new Nodes if a Node was tenured while live, which generational GCs 
  have a hard time dealing with, causing repeated major collections. However, only non-deleted Nodes need to be reachable 
  from dequeued Nodes, and reachability does not necessarily have to be of the kind understood by the GC. We use the 
- trick of linking a Node that has just been dequeued to itself.  Such a self-link implicitly means to advance to 
- head.next.
+ trick of linking a Node that has just been dequeued to itself. Such a self-link implicitly means to advance to 
+ `head.next`.

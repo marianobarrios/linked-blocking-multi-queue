@@ -50,8 +50,8 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
 	 * JSR-166 Expert Group (https://jcp.org/en/jsr/detail?id=166).
 	 * 
 	 * Each sub-queue uses, as does the LinkedBlockingQueue, a variant of the "two lock queue" algorithm. The putLock
-	 * gates entry to put (and offer), and has an associated condition for waiting puts. The takeLock is, on the other
-	 * hand, unique and shared among all the sub-queues.
+	 * gates entry to put (and offer), and has an associated condition for waiting puts. The takeLock, on the other
+	 * hand, is unique and shared among all the sub-queues.
 	 * 
 	 * Each subqueue has a "count" field, that is maintained as an atomic to avoid needing to get both locks in most
 	 * cases. Also, to minimize need for puts to get takeLock and vice-versa, cascading notifies are used. When a put
