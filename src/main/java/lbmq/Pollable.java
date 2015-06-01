@@ -3,9 +3,10 @@ package lbmq;
 import java.util.Collection;
 import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.BlockingQueue;
 
 /**
- * This interface captures the "head side" of the {@code BlockingQueue} interface
+ * This interface captures the "head side" of the {@link BlockingQueue} interface
  */
 public interface Pollable<E> {
 
@@ -71,7 +72,7 @@ public interface Pollable<E> {
 	 * Removes all available elements from this queue and adds them to the given collection. This operation may be more
 	 * efficient than repeatedly polling this queue. A failure encountered while attempting to add elements to
 	 * collection {@code c} may result in elements being in neither, either or both collections when the associated
-	 * exception is thrown. Attempts to drain a queue to itself result in {@code IllegalArgumentException}. Further, the
+	 * exception is thrown. Attempts to drain a queue to itself result in {@link IllegalArgumentException}. Further, the
 	 * behavior of this operation is undefined if the specified collection is modified while the operation is in
 	 * progress.
 	 *
@@ -94,7 +95,7 @@ public interface Pollable<E> {
 	 * Removes at most the given number of available elements from this queue and adds them to the given collection. A
 	 * failure encountered while attempting to add elements to collection {@code c} may result in elements being in
 	 * neither, either or both collections when the associated exception is thrown. Attempts to drain a queue to itself
-	 * result in {@code IllegalArgumentException}. Further, the behavior of this operation is undefined if the specified
+	 * result in {@link IllegalArgumentException}. Further, the behavior of this operation is undefined if the specified
 	 * collection is modified while the operation is in progress.
 	 *
 	 * @param c

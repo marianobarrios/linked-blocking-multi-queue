@@ -2,15 +2,16 @@ package lbmq;
 
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.BlockingQueue;
 
 /**
- * This trait captures the "tail side" of the {@code BlockingQueue} interface
+ * This trait captures the "tail side" of the {@link BlockingQueue} interface.
  */
 public interface Offerable<E> {
 
 	/**
 	 * Inserts the specified element into this queue if it is possible to do so immediately without violating capacity
-	 * restrictions, returning {@code true} upon success and throwing an {@code IllegalStateException} if no space is
+	 * restrictions, returning {@code true} upon success and throwing an {@link IllegalStateException} if no space is
 	 * currently available.
 	 *
 	 * @param e
@@ -26,7 +27,6 @@ public interface Offerable<E> {
 	 *             if some property of this element prevents it from being added to this queue
 	 */
 	boolean add(E e);
-
 
 	/**
 	 * Inserts the specified element into this queue if it is possible to do so immediately without violating capacity
@@ -44,21 +44,23 @@ public interface Offerable<E> {
 	 *             if some property of this element prevents it from being added to this queue
 	 */
 	boolean offer(E e);
-    
-    /**
-     * Inserts the specified element into this queue, waiting if necessary
-     * for space to become available.
-     *
-     * @param e the element to add
-     * @throws InterruptedException if interrupted while waiting
-     * @throws ClassCastException if the class of the specified element
-     *         prevents it from being added to this queue
-     * @throws NullPointerException if the specified element is null
-     * @throws IllegalArgumentException if some property of the specified
-     *         element prevents it from being added to this queue
-     */
-    void put(E e) throws InterruptedException;
-    
+
+	/**
+	 * Inserts the specified element into this queue, waiting if necessary for space to become available.
+	 *
+	 * @param e
+	 *            the element to add
+	 * @throws InterruptedException
+	 *             if interrupted while waiting
+	 * @throws ClassCastException
+	 *             if the class of the specified element prevents it from being added to this queue
+	 * @throws NullPointerException
+	 *             if the specified element is null
+	 * @throws IllegalArgumentException
+	 *             if some property of the specified element prevents it from being added to this queue
+	 */
+	void put(E e) throws InterruptedException;
+
 	/**
 	 * Inserts the specified element into this queue, waiting up to the specified wait time if necessary for space to
 	 * become available.
@@ -68,7 +70,7 @@ public interface Offerable<E> {
 	 * @param timeout
 	 *            how long to wait before giving up, in units of {@code unit}
 	 * @param unit
-	 *            a {@code TimeUnit} determining how to interpret the {@code timeout} parameter
+	 *            a {@link TimeUnit} determining how to interpret the {@code timeout} parameter
 	 * @return {@code true} if successful, or {@code false} if the specified waiting time elapses before space is
 	 *         available
 	 * @throws InterruptedException

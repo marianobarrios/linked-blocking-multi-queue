@@ -17,42 +17,31 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * <p>
  * An optionally-bounded blocking "multi-queue" based on linked nodes. A multi-queue is actually a set of queues that
  * are connected at the heads and have independent tails (the head of the queue is that element that has been on the
  * queue the longest time. The tail of the queue is that element that has been on the queue the shortest time). New
  * elements are added at the tail of one of the queues, and the queue retrieval operations obtain elements from the head
  * of some of the queues, according to a policy that is described below.
- * </p>
- *
  * <p>
  * This class essentially allows a consumer to efficiently block a single thread on a set of queues, until one becomes
  * available. The special feature is that individual queues can be enabled or disabled. A disabled queue is not
  * considered for polling (in the event that all the queue are disabled, any blocking operation would do so trying to
  * read, as if all the queues were empty). Elements are taken from the set of enabled queues, obeying the established
  * priority (queues with the same priority are served round robin).
- * </p>
- * 
  * <p>
  * A disabled queue accepts new elements normally until it reaches the maximum capacity (if any).
- * </p>
- * 
  * <p>
  * Individual queues can be added, removed, enabled or disabled at any time.
- * </p>
- * 
  * <p>
  * The optional capacity bound constructor argument serves as a way to prevent excessive queue expansion. The capacity,
  * if unspecified, is equal to Int.MaxVaue. Linked nodes are dynamically created upon each insertion unless this would
  * bring the queue above capacity.
- * </p>
- * 
  * <p>
  * Not being actually a linear queue, this class does not implement the {@code Collection} or {@code Queue} interfaces.
  * The traditional queue interface is split in the traits: {@code Offerable} and {@code Pollable}. Sub-queues do however
  * implement Collection.
- * </p>
  * 
+ * @see java.util.concurrent.LinkedBlockingQueue
  */
 public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
 
@@ -388,7 +377,7 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
 	}
 
 	/**
-	 * Returns the total size of this mult-queue, that is, the sum of the sizes of all the enabled sub-queues.
+	 * Returns the total size of this multi-queue, that is, the sum of the sizes of all the enabled sub-queues.
 	 * 
 	 * @return the total size of this multi-queue
 	 */
@@ -667,7 +656,7 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
 				throw new NullPointerException();
 			long oldSize = -1;
 			if (count.get() == capacity)
-	            return false;
+				return false;
 			putLock.lock();
 			try {
 				if (count.get() == capacity)
