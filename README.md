@@ -3,7 +3,7 @@ Linked Blocking Multi Queue
 
 An optionally-bounded blocking "multi-queue" based on linked nodes. A multi-queue is actually a set of queues that are
 connected at the heads and have independent tails (the head of the queue is that element that has been on the queue the
-longest time. The tail of the queue is that element that has been on the queue the shortest time). New elements are
+longest time, the tail of the queue is that element that has been on the queue the shortest time). New elements are
 added at the tail of one of the queues, and the queue retrieval operations obtain elements from the head of some of the
 queues, according to a policy that is described below.
 
@@ -23,6 +23,11 @@ the queue above capacity.
  
 Not being actually a linear queue, this class does not implement the `Collection` or `Queue` interfaces. The traditional
 queue interface is split in the traits: `Offerable` and `Pollable`. Sub-queues do however implement Collection.
+
+API
+---
+
+Browse [API documentation](http://www.javadoc.io/doc/com.github.marianobarrios/lbmq/) for the most recent release.
 
 Implementation notes
 --------------------
