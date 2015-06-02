@@ -24,6 +24,22 @@ the queue above capacity.
 Not being actually a linear queue, this class does not implement the `Collection` or `Queue` interfaces. The traditional
 queue interface is split in the traits: `Offerable` and `Pollable`. Sub-queues do however implement Collection.
 
+Example
+-------
+
+Sub queues are created from the multi queue:
+
+	LinkedBlockingMultiQueue<Int, String> q = new LinkedBlockingMultiQueue<Int, String>();
+	LinkedBlockingMultiQueue<Int, String>.SubQueue sq1 = q.addSubQueue(1 /* key*/, 10 /* priority */);
+	LinkedBlockingMultiQueue<Int, String>.SubQueue sq2 = q.addSubQueue(2 /* key*/, 10 /* priority */);
+
+Then it is possible to offer and poll:
+
+	sq1.offer("x1");
+	q.poll(); // "x1"
+	sq2.offer("x2");
+	q.poll(); // "x2"
+
 API
 ---
 
