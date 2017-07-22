@@ -24,6 +24,8 @@ the queue above capacity.
 Not being actually a linear queue, this class does not implement the `Collection` or `Queue` interfaces. The traditional
 queue interface is split in the traits: `Offerable` and `Pollable`. Sub-queues do however implement Collection.
 
+[![Build Status](https://travis-ci.org/marianobarrios/linked-blocking-multi-queue.svg?branch=master)](https://travis-ci.org/marianobarrios/linked-blocking-multi-queue)
+
 Example
 -------
 
