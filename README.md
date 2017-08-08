@@ -1,30 +1,30 @@
 # Linked Blocking Multi Queue
 
-An optionally-bounded blocking "multi-queue" based on linked nodes. A multi-queue is actually a set of queues that are connected at the heads and have independent tails (the head of the queue is that element that has been on the queue the longest time, the tail of the queue is that element that has been on the queue the shortest time). New elements are added at the tail of one of the queues, and the queue retrieval operations obtain elements from the head of some of the queues, according to a policy that is described below.
-
-This class essentially allows a consumer to efficiently block a single thread on a set of queues, until one becomes available. The special feature is that individual queues can be enabled or disabled. A disabled queue is not considered for polling (in the event that all the queue are disabled, any blocking operation would do so trying to read, as if all the queues were empty). Elements are taken from the set of enabled queues, obeying the established priority (queues with the same priority are served round robin).
-
-A disabled queue accepts new elements normally until it reaches the maximum capacity (if any).
-
-Individual queues can be added, removed, enabled or disabled at any time.
-
-The optional capacity bound constructor argument serves as a way to prevent excessive queue expansion. The capacity, if unspecified, is equal to `Integer.MAX_VALUE`. Linked nodes are dynamically created upon each insertion unless this would bring the queue above capacity.
- 
-Not being actually a linear queue, this class does not implement the `Collection` or `Queue` interfaces. The traditional queue interface is split in the traits: `Offerable` and `Pollable`. Sub-queues do however implement Collection.
+_Linked Blocking Multi Queue_ is a concurrent collection that extends the existing [Java concurrent collection library](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/package-summary.html). A notorious limitation of Java blocking primitives is that a given thread can only block on one synchronizing object at a time. Blocking on several resources is a generally useful technique, already available in selectors (for channels) in Java. It is also common in other languages. This library implements a collection that can be used in the specific case of a queue consumer (or consumers) that needs to block on several queues.
 
 [![Build Status](https://travis-ci.org/marianobarrios/linked-blocking-multi-queue.svg?branch=master)](https://travis-ci.org/marianobarrios/linked-blocking-multi-queue)
 
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.marianobarrios/lbmq/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.github.marianobarrios/lbmq)
 [![Scaladoc](http://javadoc-badge.appspot.com/com.github.marianobarrios/lbmq.svg?label=javadoc)](http://javadoc-badge.appspot.com/com.github.marianobarrios/lbmq)
 
+## Use case
+
+As mentioned, this class essentially allows a consumer to efficiently block a single thread on a set of queues, until one becomes available. 
+
+Multiple queues (instead of just one collecting everything) are usually necessary when:
+
+- Not all elements need the same capacity limit.
+- Not all elements have the same priority.
+- Some subset of enqueued elements may need to be discarded, while keeping the rest.
+
 ## Example
 
-Sub queues are created from the multi queue:
+The multi-queue has a no-argument constructor. The class as two type arguments. The first one is the type of the queue key, that is, the type of the values used as keys to identify each sub-queue. The second is the element type. Sub-queues are created from it in a second step:
 
 ```java
-LinkedBlockingMultiQueue<Int, String> q = new LinkedBlockingMultiQueue<Int, String>();
-LinkedBlockingMultiQueue<Int, String>.SubQueue sq1 = q.addSubQueue(1 /* key*/, 10 /* priority */);
-LinkedBlockingMultiQueue<Int, String>.SubQueue sq2 = q.addSubQueue(2 /* key*/, 10 /* priority */);
+LinkedBlockingMultiQueue<Int, String> q = new LinkedBlockingMultiQueue<>();
+LinkedBlockingMultiQueue<Int, String>.SubQueue sq1 = q.addSubQueue(1 /* key */, 10 /* priority */);
+LinkedBlockingMultiQueue<Int, String>.SubQueue sq2 = q.addSubQueue(2 /* key */, 10 /* priority */, 10000 /* capacity */);
 ```
 
 Then it is possible to offer and poll:
@@ -35,6 +35,28 @@ q.poll(); // "x1"
 sq2.offer("x2");
 q.poll(); // "x2"
 ```
+
+## Features
+
+_Linked Blocking Multi Queue_ is an optionally-bounded blocking "multi-queue" based on linked nodes, defining multi-queue as a set of queues that are connected at the heads and have independent tails (the head of the queue is that element that has been on the queue the longest time, the tail of the queue is that element that has been on the queue the shortest time). New elements are added at the tail of one of the queues, and the queue retrieval operations obtain elements from the head of some of the queues, according to a policy that is described below.
+
+The factory method for sub-queues has an optional capacity argument, as a way to prevent excessive queue expansion. The capacity, if unspecified, is equal to `Integer.MAX_VALUE`. Linked nodes are dynamically created upon each insertion unless this would bring the queue above capacity.
+
+### Priorities
+
+Sub-queues can have different priorities, meaning that elements from higher priority queues will be offered first to consumers. Inside the same priority queues are drained round-robin.
+
+### Enabling, disabling, adding and removing queues
+
+A special feature is that individual queues can be enabled or disabled. A disabled queue is not considered for polling (in the event that all the queue are disabled, any blocking operation would do so trying to read, as if all the queues were empty). Elements are taken from the set of enabled queues ()obeying the established priority).
+
+A disabled queue accepts new elements normally until it reaches the maximum capacity (if any).
+
+Individual queues can be enabled or disabled (and also added or removed) at any time.
+
+## Compatibility
+
+Not being actually a linear queue, this class does not implement the `Collection` or `Queue` interfaces. The traditional queue interface is split in the traits: `Offerable` and `Pollable`. Sub-queues do however implement Collection.
 
 ## Implementation notes
 
