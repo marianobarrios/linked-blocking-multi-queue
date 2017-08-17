@@ -293,6 +293,8 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
         final LinkedBlockingMultiQueue<QueueKey, Integer>.SubQueue sq = q.getSubQueue(QueueKey.A);
         final CheckedBarrier barrier = new CheckedBarrier(2);
         final Integer zero = makeElement(0);
+        assertTrue(sq.offer(zero));
+        sq.enable(false);
         Thread t = newStartedThread(new CheckedRunnable() {
             public void realRun() throws InterruptedException {
                 long startTime1 = System.nanoTime();
@@ -304,15 +306,13 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
                 assertTrue(millisElapsedSince(startTime2) < SHORT_DELAY_MS);
             }
         });
-        assertTrue(sq.offer(zero));
-        sq.enable(false);
         barrier.await();
         sq.enable(true);
         awaitTermination(t);
     }
 
     /**
-     * timed poll before a delayed offer times out; after offer succeeds; on interruption throws
+     * timed poll before a delayed offer times out, after offer succeeds; on interruption throws
      */
     @Test
     public void testTimedPollWithOfferMultiAdded() throws InterruptedException {
@@ -320,6 +320,8 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
         final LinkedBlockingMultiQueue<QueueKey, Integer>.SubQueue qa = q.getSubQueue(QueueKey.A);
         final CheckedBarrier barrier = new CheckedBarrier(2);
         final Integer zero = makeElement(0);
+        assertTrue(qa.offer(zero));
+        qa.enable(false);
         Thread t = newStartedThread(new CheckedRunnable() {
             public void realRun() throws InterruptedException {
                 long startTime1 = System.nanoTime();
@@ -331,8 +333,6 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
                 assertTrue(millisElapsedSince(startTime2) < SHORT_DELAY_MS);
             }
         });
-        assertTrue(qa.offer(zero));
-        qa.enable(false);
         barrier.await();
         q.addSubQueue(QueueKey.B, 100);
         final LinkedBlockingMultiQueue<QueueKey, Integer>.SubQueue qb = q.getSubQueue(QueueKey.B);
