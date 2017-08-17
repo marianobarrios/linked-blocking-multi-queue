@@ -23,8 +23,10 @@ The multi-queue has a no-argument constructor. The class as two type arguments. 
 
 ```java
 LinkedBlockingMultiQueue<Int, String> q = new LinkedBlockingMultiQueue<>();
-LinkedBlockingMultiQueue<Int, String>.SubQueue sq1 = q.addSubQueue(1 /* key */, 10 /* priority */);
-LinkedBlockingMultiQueue<Int, String>.SubQueue sq2 = q.addSubQueue(2 /* key */, 10 /* priority */, 10000 /* capacity */);
+q.addSubQueue(1 /* key */, 10 /* priority */);
+q.addSubQueue(2 /* key */, 10 /* priority */, 10000 /* capacity */);
+LinkedBlockingMultiQueue<Int, String>.SubQueue sq1 = q.getSubQueue(1);
+LinkedBlockingMultiQueue<Int, String>.SubQueue sq2 = q.getSubQueue(2);
 ```
 
 Then it is possible to offer and poll:
