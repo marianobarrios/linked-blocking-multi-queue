@@ -93,7 +93,7 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
     /** Current number of elements in enabled sub-queues */
     private final AtomicInteger totalCount = new AtomicInteger();
 
-    private final LinkedList<PriorityGroup> priorityGroups = new LinkedList<PriorityGroup>();
+    private final ArrayList<PriorityGroup> priorityGroups = new ArrayList<PriorityGroup>();
 
     /**
      * Set of sub-queues with the same priority
@@ -137,6 +137,7 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
         SubQueue getNextSubQueue() {
             // assert takeLock.isHeldByCurrentThread();
             int startIdx = nextIdx;
+            ArrayList<SubQueue> queues = this.queues;
             do {
                 SubQueue child = queues.get(nextIdx);
                 nextIdx += 1;
