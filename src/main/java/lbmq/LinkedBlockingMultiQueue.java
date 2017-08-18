@@ -134,7 +134,7 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
             }
         }
 
-        DequeResult dequeue() {
+        SubQueue getNextSubQueue() {
             // assert takeLock.isHeldByCurrentThread();
             int startIdx = nextIdx;
             do {
@@ -143,7 +143,7 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
                 if (nextIdx == queues.size())
                     nextIdx = 0;
                 if (child.enabled && child.size() > 0)
-                    return new DequeResult(child, child.dequeue());
+                    return child;
             } while (nextIdx != startIdx);
             return null;
         }
@@ -285,7 +285,8 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
 
     public E poll(long timeout, TimeUnit unit) throws InterruptedException {
         long remaining = unit.toNanos(timeout);
-        DequeResult dequeResult;
+        SubQueue subQueue;
+        E element;
         int oldSize;
         takeLock.lockInterruptibly();
         try {
@@ -295,8 +296,9 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
                 remaining = notEmpty.awaitNanos(remaining);
             }
             // at this point we know there is an element
-            dequeResult = deque();
-            oldSize = dequeResult.subQueue.count.getAndDecrement();
+            subQueue = getNextSubQueue();
+            element = subQueue.dequeue();
+            oldSize = subQueue.count.getAndDecrement();
             if (totalCount.getAndDecrement() > 1) {
                 // sub-queue still has elements, notify next poller
                 notEmpty.signal();
@@ -304,24 +306,26 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
         } finally {
             takeLock.unlock();
         }
-        if (oldSize == dequeResult.subQueue.capacity) {
+        if (oldSize == subQueue.capacity) {
             // we just took an element from a full queue, notify any blocked offers
-            dequeResult.subQueue.signalNotFull();
+            subQueue.signalNotFull();
         }
-        return dequeResult.element;
+        return element;
     }
 
     public E take() throws InterruptedException {
-        DequeResult dequeResult;
+        SubQueue subQueue;
         int oldSize;
+        E element;
         takeLock.lockInterruptibly();
         try {
             while (totalCount.get() == 0) {
                 notEmpty.await();
             }
             // at this point we know there is an element
-            dequeResult = deque();
-            oldSize = dequeResult.subQueue.count.getAndDecrement();
+            subQueue = getNextSubQueue();
+            element = subQueue.dequeue();
+            oldSize = subQueue.count.getAndDecrement();
             if (totalCount.getAndDecrement() > 1) {
                 // sub-queue still has elements, notify next poller
                 notEmpty.signal();
@@ -329,25 +333,27 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
         } finally {
             takeLock.unlock();
         }
-        if (oldSize == dequeResult.subQueue.capacity) {
+        if (oldSize == subQueue.capacity) {
             // we just took an element from a full queue, notify any blocked offers
-            dequeResult.subQueue.signalNotFull();
+            subQueue.signalNotFull();
         }
-        return dequeResult.element;
+        return element;
     }
 
     public E poll() {
         if (totalCount.get() == 0)
             return null;
-        DequeResult dequeResult;
+        SubQueue subQueue;
+        E element;
         int oldSize;
         takeLock.lock();
         try {
             if (totalCount.get() == 0)
                 return null;
             // at this point we know there is an element
-            dequeResult = deque();
-            oldSize = dequeResult.subQueue.count.getAndDecrement();
+            subQueue = getNextSubQueue();
+            element = subQueue.dequeue();
+            oldSize = subQueue.count.getAndDecrement();
             if (totalCount.getAndDecrement() > 1) {
                 // sub-queue still has elements, notify next poller
                 notEmpty.signal();
@@ -355,11 +361,11 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
         } finally {
             takeLock.unlock();
         }
-        if (oldSize == dequeResult.subQueue.capacity) {
+        if (oldSize == subQueue.capacity) {
             // we just took an element from a full queue, notify any blocked offers
-            dequeResult.subQueue.signalNotFull();
+            subQueue.signalNotFull();
         }
-        return dequeResult.element;
+        return element;
     }
 
     public E peek() {
@@ -394,34 +400,26 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
         return totalSize() == 0;
     }
 
-    private class DequeResult {
-        public final SubQueue subQueue;
-        public final E element;
-
-        public DequeResult(SubQueue subQueue, E element) {
-            this.subQueue = subQueue;
-            this.element = element;
-        }
-    }
-
-    private DequeResult deque() {
+    private SubQueue getNextSubQueue() {
         // assert takeLock.isHeldByCurrentThread();
-        DequeResult dequed = null;
-        Iterator<PriorityGroup> it = priorityGroups.iterator();
-        while (it.hasNext() && dequed == null) {
-            dequed = it.next().dequeue();
+        for (int i = 0; i < priorityGroups.size(); i++) {
+            SubQueue subQueue = priorityGroups.get(i).getNextSubQueue();
+            if (subQueue != null) {
+                return subQueue;
+            }
         }
-        return dequed;
+        return null;
     }
 
     private E peekImpl() {
         // assert takeLock.isHeldByCurrentThread();
-        E dequed = null;
-        Iterator<PriorityGroup> it = priorityGroups.iterator();
-        while (it.hasNext() && dequed == null) {
-            dequed = it.next().peek();
+        for (int i = 0; i < priorityGroups.size(); i++) {
+            E dequed = priorityGroups.get(i).peek();
+            if (dequed != null) {
+                return dequed;
+            }
         }
-        return dequed;
+        return null;
     }
 
     public int drainTo(Collection<? super E> c) {
@@ -440,9 +438,8 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
             int n = Math.min(maxElements, totalCount.get());
             // ordered iteration, begin with lower index (highest priority)
             int drained = 0;
-            Iterator<PriorityGroup> it = priorityGroups.iterator();
-            while (it.hasNext() && drained < n) {
-                drained += it.next().drainTo(c, n - drained);
+            for (int i = 0; i < priorityGroups.size() && drained < n; i++) {
+                drained += priorityGroups.get(i).drainTo(c, n - drained);
             }
             // assert drained == n;
             totalCount.getAndAdd(-drained);
