@@ -342,8 +342,6 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
     }
 
     public E poll() {
-        if (totalCount.get() == 0)
-            return null;
         SubQueue subQueue;
         E element;
         int oldSize;
@@ -370,8 +368,6 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
     }
 
     public E peek() {
-        if (totalCount.get() == 0)
-            return null;
         takeLock.lock();
         try {
             if (totalCount.get() == 0)
