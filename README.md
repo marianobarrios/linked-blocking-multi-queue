@@ -1,11 +1,22 @@
 # Linked Blocking Multi Queue
 
-_Linked Blocking Multi Queue_ is a concurrent collection that extends the existing [Java concurrent collection library](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/package-summary.html). A notorious limitation of Java blocking primitives is that a given thread can only block on one synchronizing object at a time. Blocking on several resources is a generally useful technique, already available in selectors (for channels) in Java. It is also common in other languages. This library implements a collection that can be used in the specific case of a queue consumer (or consumers) that needs to block on several queues.
+_Linked Blocking Multi Queue_ is a concurrent collection that extends the existing [Java concurrent collection library](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/package-summary.html), offering an optionally-bounded blocking "multi-queue" based on linked nodes. That is, essentially, a data structure with several tails but one head, that allows a reader, crucially, to block on more than one queue.
 
 [![Build Status](https://travis-ci.org/marianobarrios/linked-blocking-multi-queue.svg?branch=master)](https://travis-ci.org/marianobarrios/linked-blocking-multi-queue)
 
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.marianobarrios/lbmq/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.github.marianobarrios/lbmq)
 [![Scaladoc](http://javadoc-badge.appspot.com/com.github.marianobarrios/lbmq.svg?label=javadoc)](http://javadoc-badge.appspot.com/com.github.marianobarrios/lbmq)
+
+## Rationale
+
+ A notorious limitation of Java blocking primitives is that a given thread can only block on one synchronizing object at a time. Blocking on several resources is a generally useful technique, already available in selectors (for channels) in Java. It is also common in other languages. This library offers a collection that can be used when a queue consumer (or consumers) needs to block on several queues.
+
+Features:
+
+- Priorities for different sub-queues
+- Fair (round-robin) selection of elements among same-priority sub-queues.
+- Mid-flight addition and removal of sub-queues.
+- Mid-flight change of sub-queue status (enabled/disabled).
 
 ## Use case
 
@@ -15,7 +26,8 @@ Multiple queues (instead of just one collecting everything) are usually necessar
 
 - Not all elements need the same capacity limit.
 - Not all elements have the same priority.
-- Some subset of enqueued elements may need to be discarded, while keeping the rest.
+- Among the same priority, round-robin (fair) consumption is desired (avoiding that prolific producers starve occasional ones).
+- Some subset of enqueued elements may need to be discarded or suspended, while keeping the rest.
 
 ## Example
 
