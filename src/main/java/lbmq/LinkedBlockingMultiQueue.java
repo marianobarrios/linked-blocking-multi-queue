@@ -121,9 +121,9 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
                 if (subQueue.key == removed.key) {
                     removed.putLock.lock();
                     try {
+                        it.remove();
                         if (nextIdx == queues.size())
                             nextIdx = 0;
-                        it.remove();
                         if (subQueue.enabled)
                             totalCount.getAndAdd(-removed.size());
                         return;
@@ -220,21 +220,28 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
             SubQueue old = subQueues.putIfAbsent(key, subQueue);
             if (old == null) {
                 int i = 0;
+                boolean added = false;
                 Iterator<PriorityGroup> it = priorityGroups.iterator();
                 while (it.hasNext()) {
                     PriorityGroup pg = it.next();
                     if (pg.priority == priority) {
                         pg.addQueue(subQueue);
+                        added = true;
+                        break;
                     } else if (pg.priority > priority) {
                         PriorityGroup newPg = new PriorityGroup(priority);
                         priorityGroups.add(i, newPg);
                         newPg.addQueue(subQueue);
+                        added = true;
+                        break;
                     }
                     i += 1;
                 }
-                PriorityGroup newPg = new PriorityGroup(priority);
-                priorityGroups.add(newPg);
-                newPg.addQueue(subQueue);
+                if (!added) {
+                    PriorityGroup newPg = new PriorityGroup(priority);
+                    priorityGroups.add(newPg);
+                    newPg.addQueue(subQueue);
+                }
             }
             return old;
         } finally {
@@ -253,8 +260,12 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
         takeLock.lock();
         try {
             SubQueue removed = subQueues.remove(key);
-            if (removed != null)
+            if (removed != null) {
                 removed.priorityGroup.removeQueue(removed);
+                if (removed.priorityGroup.queues.size() == 0) {
+                    this.priorityGroups.remove(removed.priorityGroup);
+                }
+            }
             return removed;
         } finally {
             takeLock.unlock();
@@ -444,6 +455,16 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
         } finally {
             takeLock.unlock();
         }
+    }
+
+    /**
+     * Counts the priority groups currently registered in {@link LinkedBlockingMultiQueue}. Suitable
+     * for debugging and testing.
+     *
+     * @return the number of priority groups currently registered
+     */
+    public int getPriorityGroupsCount() {
+        return priorityGroups.size();
     }
 
     /**
