@@ -1465,6 +1465,46 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
         assertEquals(0, q.totalSize());
     }
 
+    @Test
+    public void testRemoveQueueOfTheSamePriorityDecrementsNextSubQueuePointer() {
+        LinkedBlockingMultiQueue<QueueKey, Integer> q = new LinkedBlockingMultiQueue<>();
+        q.addSubQueue(QueueKey.A, 0);
+        q.addSubQueue(QueueKey.B, 0);
+
+        q.getSubQueue(QueueKey.A).offer(1);
+        q.getSubQueue(QueueKey.B).offer(2);
+
+        Integer firstPoll = q.poll();
+        q.removeSubQueue(QueueKey.A);
+        Integer secondPoll = q.poll();
+
+        assertEquals(1, (long) firstPoll);
+        assertEquals(2, (long) secondPoll);
+    }
+
+    @Test
+    public void testThatPriorityGroupIsRemovedWhenItDoesNotContainAnySubQueue() {
+        LinkedBlockingMultiQueue<QueueKey, Integer> q = new LinkedBlockingMultiQueue<>();
+        q.addSubQueue(QueueKey.A, 0);
+        q.addSubQueue(QueueKey.B, 1);
+
+        q.getSubQueue(QueueKey.B).offer(2);
+
+        q.removeSubQueue(QueueKey.A);
+
+        Integer poll = q.poll();
+
+        assertEquals(2, (long) poll);
+    }
+
+    @Test
+    public void testAddPrioritySubQueueWhenLowerPriorityQueueExists() {
+        LinkedBlockingMultiQueue<QueueKey, Integer> q = new LinkedBlockingMultiQueue<>();
+        q.addSubQueue(QueueKey.A, 1);
+        q.addSubQueue(QueueKey.B, 0);
+        assertEquals(2, q.getPriorityGroupsCount());
+    }
+
     void checkEmpty(LinkedBlockingMultiQueue<?, ?> q) {
         try {
             assertTrue(q.isEmpty());
