@@ -42,7 +42,9 @@ uploadArchives {
     repositories {
         mavenDeployer {
             beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
-            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/")
+            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+                authentication(userName: sonatypeUsername, password: sonatypePassword)
+            }
             pom.project {
                name 'org.github.marianobarrios:lbmq'
                description 'LinkedBlockingMultiQueue is an optionally-bounded blocking "multi-queue" based on linked nodes. '
