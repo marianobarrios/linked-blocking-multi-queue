@@ -93,12 +93,37 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
     /** Current number of elements in enabled sub-queues */
     private final AtomicInteger totalCount = new AtomicInteger();
 
+    /**
+     * A list of priority groups. Group consists of multiple queues.
+     */
     private final ArrayList<PriorityGroup> priorityGroups = new ArrayList<PriorityGroup>();
+
+    /**
+     * Allows to choose the next subQueue to be used.
+     */
+    private final SubQueueSelection<K, E> subQueueSelection;
+
+    /**
+     * Constructor. The default {@link DefaultSubQueueSelection} will be used.
+     */
+    public LinkedBlockingMultiQueue() {
+        this(new DefaultSubQueueSelection());
+    }
+
+    /**
+     * Constructor.
+     *
+     * @param subQueueSelection an implementation of {@link SubQueueSelection}
+     */
+    public LinkedBlockingMultiQueue(SubQueueSelection<K, E> subQueueSelection) {
+        this.subQueueSelection = subQueueSelection;
+        this.subQueueSelection.setPriorityGroups(this.priorityGroups);
+    }
 
     /**
      * Set of sub-queues with the same priority
      */
-    private class PriorityGroup {
+    class PriorityGroup {
 
         final int priority;
         final ArrayList<SubQueue> queues = new ArrayList<SubQueue>(0);
@@ -308,7 +333,7 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
                 remaining = notEmpty.awaitNanos(remaining);
             }
             // at this point we know there is an element
-            subQueue = getNextSubQueue();
+            subQueue = subQueueSelection.getNext();
             element = subQueue.dequeue();
             oldSize = subQueue.count.getAndDecrement();
             if (totalCount.getAndDecrement() > 1) {
@@ -335,7 +360,7 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
                 notEmpty.await();
             }
             // at this point we know there is an element
-            subQueue = getNextSubQueue();
+            subQueue = subQueueSelection.getNext();
             element = subQueue.dequeue();
             oldSize = subQueue.count.getAndDecrement();
             if (totalCount.getAndDecrement() > 1) {
@@ -361,7 +386,7 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
             if (totalCount.get() == 0)
                 return null;
             // at this point we know there is an element
-            subQueue = getNextSubQueue();
+            subQueue = subQueueSelection.getNext();
             element = subQueue.dequeue();
             oldSize = subQueue.count.getAndDecrement();
             if (totalCount.getAndDecrement() > 1) {
@@ -384,7 +409,7 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
             if (totalCount.get() == 0)
                 return null;
             else
-                return peekImpl();
+                return subQueueSelection.peek();
         } finally {
             takeLock.unlock();
         }
@@ -406,28 +431,6 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
      */
     public boolean isEmpty() {
         return totalSize() == 0;
-    }
-
-    private SubQueue getNextSubQueue() {
-        // assert takeLock.isHeldByCurrentThread();
-        for (int i = 0; i < priorityGroups.size(); i++) {
-            SubQueue subQueue = priorityGroups.get(i).getNextSubQueue();
-            if (subQueue != null) {
-                return subQueue;
-            }
-        }
-        return null;
-    }
-
-    private E peekImpl() {
-        // assert takeLock.isHeldByCurrentThread();
-        for (int i = 0; i < priorityGroups.size(); i++) {
-            E dequed = priorityGroups.get(i).peek();
-            if (dequed != null) {
-                return dequed;
-            }
-        }
-        return null;
     }
 
     public int drainTo(Collection<? super E> c) {
@@ -477,7 +480,7 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
         private final int capacity;
         private PriorityGroup priorityGroup;
 
-        private SubQueue(K key, int capacity) {
+        SubQueue(K key, int capacity) {
             if (capacity <= 0)
                 throw new IllegalArgumentException();
             this.key = key;
@@ -941,6 +944,34 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
         Node(E item) {
             this.item = item;
         }
+
+    }
+
+    /**
+     * Allows to choose the next subQueue.
+     */
+    public interface SubQueueSelection<K, E> {
+
+        /**
+         * Returns the next subQueue to be used.
+         *
+         * @return a subQueue
+         */
+        LinkedBlockingMultiQueue.SubQueue getNext();
+
+        /**
+         * Returns the next element from the queue but keeps it in the queue.
+         *
+         * @return the next element from the queue
+         */
+        E peek();
+
+        /**
+         * Sets priority groups.
+         *
+         * @param priorityGroups priority groups
+         */
+        void setPriorityGroups(ArrayList<LinkedBlockingMultiQueue<K, E>.PriorityGroup> priorityGroups);
 
     }
 
