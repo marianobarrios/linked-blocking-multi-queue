@@ -14,7 +14,7 @@ _Linked Blocking Multi Queue_ is a concurrent collection that extends the existi
 Features:
 
 - Priorities for different sub-queues
-- Fair (round-robin) selection of elements among same-priority sub-queues.
+- Customizable priority evaluation (by default, fair (round-robin) selection of elements among same-priority sub-queues).
 - Mid-flight addition and removal of sub-queues.
 - Mid-flight change of sub-queue status (enabled/disabled).
 
