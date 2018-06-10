@@ -31,7 +31,7 @@ public class DefaultSubQueueSelection<K, E> implements LinkedBlockingMultiQueue.
     public E peek() {
         // assert takeLock.isHeldByCurrentThread();
         for (int i = 0; i < priorityGroups.size(); i++) {
-            E dequed = (E) priorityGroups.get(i).peek();
+            E dequed = priorityGroups.get(i).peek();
             if (dequed != null) {
                 return dequed;
             }

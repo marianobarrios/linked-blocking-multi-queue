@@ -82,7 +82,7 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
      * advance to head.next.
      */
 
-    private final ConcurrentHashMap<K, SubQueue> subQueues = new ConcurrentHashMap<K, SubQueue>();
+    private final ConcurrentHashMap<K, SubQueue> subQueues = new ConcurrentHashMap<>();
 
     /** Lock held by take, poll, etc */
     private final ReentrantLock takeLock = new ReentrantLock();
@@ -96,7 +96,7 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
     /**
      * A list of priority groups. Group consists of multiple queues.
      */
-    private final ArrayList<PriorityGroup> priorityGroups = new ArrayList<PriorityGroup>();
+    private final ArrayList<PriorityGroup> priorityGroups = new ArrayList<>();
 
     /**
      * Allows to choose the next subQueue to be used.
@@ -107,7 +107,7 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
      * Constructor. The default {@link DefaultSubQueueSelection} will be used.
      */
     public LinkedBlockingMultiQueue() {
-        this(new DefaultSubQueueSelection());
+        this(new DefaultSubQueueSelection<>());
     }
 
     /**
@@ -126,7 +126,7 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
     class PriorityGroup {
 
         final int priority;
-        final ArrayList<SubQueue> queues = new ArrayList<SubQueue>(0);
+        final ArrayList<SubQueue> queues = new ArrayList<>(0);
 
         PriorityGroup(int priority) {
             this.priority = priority;
@@ -246,9 +246,7 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
             if (old == null) {
                 int i = 0;
                 boolean added = false;
-                Iterator<PriorityGroup> it = priorityGroups.iterator();
-                while (it.hasNext()) {
-                    PriorityGroup pg = it.next();
+                for (PriorityGroup pg : priorityGroups) {
                     if (pg.priority == priority) {
                         pg.addQueue(subQueue);
                         added = true;
@@ -500,7 +498,7 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
         /**
          * Head of linked list. Invariant: head.item == null
          */
-        private Node<E> head = new Node<E>(null);
+        private Node<E> head = new Node<>(null);
 
         /**
          * Tail of linked list. Invariant: last.next == null
@@ -611,7 +609,7 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
              * As this method never fails to insert, it is more efficient to pre-create the node outside the lock, to 
              * reduce contention
              */
-            Node<E> node = new Node<E>(e);
+            Node<E> node = new Node<>(e);
             putLock.lockInterruptibly();
             try {
                 /*
@@ -637,7 +635,6 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
                 // just added an element to an empty queue, notify pollers
                 signalNotEmpty();
             }
-            return;
         }
 
         public boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException {
@@ -652,7 +649,7 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
                         return false;
                     nanos = notFull.awaitNanos(nanos);
                 }
-                enqueue(new Node<E>(e));
+                enqueue(new Node<>(e));
                 if (count.getAndIncrement() + 1 < capacity) {
                     // queue not full after adding, notify next offerer
                     notFull.signal();
@@ -679,7 +676,7 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
             try {
                 if (count.get() == capacity)
                     return false;
-                enqueue(new Node<E>(e));
+                enqueue(new Node<>(e));
                 if (count.getAndIncrement() + 1 < capacity) {
                     // queue not full after adding, notify next offerer
                     notFull.signal();
