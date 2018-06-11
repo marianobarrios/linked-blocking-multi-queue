@@ -8,7 +8,7 @@ task wrapper(type: Wrapper) {
 }
 
 group = 'com.github.marianobarrios'
-version = '0.3.0'
+version = '0.4.0'
 
 repositories {
     mavenCentral()
