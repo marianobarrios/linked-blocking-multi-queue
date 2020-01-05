@@ -1,5 +1,5 @@
 /**
- * "lbmq" is short for "Linked Blocking Multi Queue", which is a concurrent queue that complements the ones offered in
- * the standard package {@link java.util.concurrent}
+ * "lbmq" is short for "Linked Blocking Multi Queue", which is a concurrent queue that complements
+ * the ones offered in the standard package {@link java.util.concurrent}
  */
 package lbmq;
