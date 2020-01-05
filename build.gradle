@@ -1,68 +1,58 @@
-apply plugin: 'java'
-apply plugin: 'eclipse'
-apply plugin: 'maven'
-apply plugin: 'signing'
-
-group = 'com.github.marianobarrios'
-version = '0.5.0-SNAPSHOT'
+plugins {
+    id 'java'
+    id 'signing'
+    id 'maven-publish'
+}
 
 repositories {
+    mavenLocal()
     mavenCentral()
 }
 
 dependencies {
-    testCompile group: 'junit', name: 'junit', version: '4.12'
+    testImplementation 'junit:junit:4.12'
 }
 
-task javadocJar(type: Jar, dependsOn: javadoc) {
-    classifier = 'javadoc'
-    from tasks.javadoc.destinationDir
-}
-
-task sourcesJar(type: Jar) {
-    from sourceSets.main.allSource
-    classifier = 'sources'
-}
-
-artifacts {
-    archives jar
-    archives javadocJar
-    archives sourcesJar
+publishing {
+    publications {
+        lbmq(MavenPublication) {
+            groupId = 'com.github.marianobarrios'
+            artifactId = 'lbmq'
+            version = '0.5.0-SNAPSHOT'
+            from components.java
+            pom {
+                name = 'Linked Blockin Multi-Queue'
+                licenses {
+                    license {
+                        name = 'BSD-style'
+                        url = 'http://www.opensource.org/licenses/bsd-license.php'
+                    }
+                }
+                developers {
+                    developer {
+                        name = 'Mariano Barrios'
+                        email = 'marbar@gmail.com'
+                    }
+                }
+                scm {
+                    url = 'scm:git@github.com:marianobarrios/lbmq.git'
+                    connection = 'scm:git@github.com:marianobarrios/lbmq.git'
+                    developerConnection = 'scm:git@github.com:marianobarrios/lbmq.git'
+                }
+            }
+        }
+    }
+    repositories {
+        maven {
+            url = 'https://oss.sonatype.org/service/local/staging/deploy/maven2/'
+            credentials {
+                username = project.findProperty('sonatypeUsername')
+                password = project.findProperty('sonatypePassword')
+            }
+        }
+    }
 }
 
 signing {
-    sign configurations.archives
-}
-
-uploadArchives {
-    repositories {
-        mavenDeployer {
-            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
-            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
-                authentication(userName: System.properties['sonatypeUsername'], password: System.properties['sonatypePassword'])
-            }
-            pom.project {
-               name 'org.github.marianobarrios:lbmq'
-               description 'LinkedBlockingMultiQueue is an optionally-bounded blocking "multi-queue" based on linked nodes. '
-               url 'http://github.com/marianobarrios/lbmq'
-               scm {
-                   url 'scm:git@github.com:marianobarrios/lbmq.git'
-                   connection 'scm:git@github.com:marianobarrios/lbmq.git'
-                   developerConnection 'scm:git@github.com:marianobarrios/lbmq.git'
-               }
-               licenses {
-                   license {
-                       name 'BSD-style'
-                       url 'http://www.opensource.org/licenses/bsd-license.php'
-                   }
-               }
-               developers {
-                   developer {
-                       name 'Mariano Barrios'
-                       email 'marbar@gmail.com'
-                   }
-               }
-           }
-        }
-    }
+    sign publishing.publications.lbmq
 }
