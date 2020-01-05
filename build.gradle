@@ -3,10 +3,6 @@ apply plugin: 'eclipse'
 apply plugin: 'maven'
 apply plugin: 'signing'
 
-task wrapper(type: Wrapper) {
-    gradleVersion = '4.6'
-}
-
 group = 'com.github.marianobarrios'
 version = '0.5.0-SNAPSHOT'
 

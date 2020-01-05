@@ -193,7 +193,7 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
     public void testToArray_NullArray() {
         LinkedBlockingMultiQueue<QueueKey, Integer> q = createSingleQueue();
         LinkedBlockingMultiQueue<QueueKey, Integer>.SubQueue sq = q.getSubQueue(QueueKey.A);
-        sq.toArray(null);
+        sq.toArray((Object[]) null);
     }
 
     /**
