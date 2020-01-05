@@ -61,7 +61,7 @@ The factory method for sub-queues has an optional capacity argument, as a way to
 Sub-queues can have different priorities, meaning that elements from higher priority queues will be offered first to consumers. Inside the same priority queues are drained round-robin.
 
 ### Enabling, disabling, adding and removing queues
-
+``
 A special feature is that individual queues can be enabled or disabled. A disabled queue is not considered for polling (in the event that all the queue are disabled, any blocking operation would do so trying to read, as if all the queues were empty). Elements are taken from the set of enabled queues ()obeying the established priority).
 
 A disabled queue accepts new elements normally until it reaches the maximum capacity (if any).
@@ -96,3 +96,11 @@ To implement weakly consistent iterators, it appears we need to keep all Nodes G
  
 - Cause cross-generational linking of old Nodes to new Nodes if a Node was tenured while live, which generational garbage collectors have a hard time dealing with, causing repeated major collections. However, only non-deleted Nodes need to be reachable from dequeued Nodes, and reachability does not necessarily have to be of the kind understood by the garbage collector. We use the trick of linking a Node that has just been dequeued to itself. Such a self-link implicitly means to advance to 
 `head.next`.
+
+### Requirements
+
+TLS Channel requires Java 8 or newer.
+
+### Size and Dependencies
+
+The library has no dependencies. The main jar file size is below 20 KB.
