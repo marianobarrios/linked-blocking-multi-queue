@@ -208,42 +208,22 @@ public class TestCase {
     }
 
     /**
-     * Fails with message "should throw " + exceptionName.
-     */
-    public void shouldThrow(String exceptionName) {
-        fail("Should throw " + exceptionName);
-    }
-
-    /**
      * The number of elements to place in collections, arrays, etc.
      */
     public static final int SIZE = 20;
 
     // Some convenient Integer constants
 
-    public static final Integer zero = new Integer(0);
-    public static final Integer one = new Integer(1);
-    public static final Integer two = new Integer(2);
-    public static final Integer three = new Integer(3);
-    public static final Integer four = new Integer(4);
-    public static final Integer five = new Integer(5);
-    public static final Integer six = new Integer(6);
-    public static final Integer seven = new Integer(7);
-    public static final Integer eight = new Integer(8);
-    public static final Integer nine = new Integer(9);
-
-    /**
-     * Sleeps until the given time has elapsed. Throws AssertionFailedError if interrupted.
-     */
-    void sleep(long millis) {
-        try {
-            delay(millis);
-        } catch (InterruptedException fail) {
-            AssertionFailedError afe = new AssertionFailedError("Unexpected InterruptedException");
-            afe.initCause(fail);
-            throw afe;
-        }
-    }
+    public static final Integer zero = 0;
+    public static final Integer one = 1;
+    public static final Integer two = 2;
+    public static final Integer three = 3;
+    public static final Integer four = 4;
+    public static final Integer five = 5;
+    public static final Integer six = 6;
+    public static final Integer seven = 7;
+    public static final Integer eight = 8;
+    public static final Integer nine = 9;
 
     /**
      * Spin-waits up to the specified number of milliseconds for the given thread to enter a wait state: BLOCKED,
@@ -352,14 +332,6 @@ public class TestCase {
         }
     }
 
-    void assertSerialEquals(Object x, Object y) {
-        assertTrue(Arrays.equals(serialBytes(x), serialBytes(y)));
-    }
-
-    void assertNotSerialEquals(Object x, Object y) {
-        assertFalse(Arrays.equals(serialBytes(x), serialBytes(y)));
-    }
-
     byte[] serialBytes(Object o) {
         try {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -371,19 +343,6 @@ public class TestCase {
         } catch (Throwable fail) {
             threadUnexpectedException(fail);
             return new byte[0];
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    <T> T serialClone(T o) {
-        try {
-            ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(serialBytes(o)));
-            T clone = (T) ois.readObject();
-            assertSame(o.getClass(), clone.getClass());
-            return clone;
-        } catch (Throwable fail) {
-            threadUnexpectedException(fail);
-            return null;
         }
     }
 

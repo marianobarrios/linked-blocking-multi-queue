@@ -1515,9 +1515,6 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
             assertNull(q.poll());
             assertNull(q.poll(0, MILLISECONDS));
 
-            // TODO: Implement toString()
-            // assertEquals(q.toString(), "[]");
-
             try {
                 q.element();
                 shouldThrow();
