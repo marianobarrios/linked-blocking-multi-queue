@@ -29,6 +29,9 @@ publishing {
             from components.java
             pom {
                 name = 'Linked Blocking Multi-Queue'
+                description = 'A concurrent collection that extends the existing Java concurrent collection library, ' +
+                        'offering an optionally-bounded blocking "multi-queue" based on linked nodes.'
+                url = 'https://github.com/marianobarrios/linked-blocking-multi-queue'
                 licenses {
                     license {
                         name = 'BSD-style'
