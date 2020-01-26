@@ -7,11 +7,11 @@ import java.util.Queue;
 /**
  * This class provides skeletal implementations of some {@link Offerable} operations. The
  * implementations in this class are appropriate when the base implementation does <em>not</em>
- * allow <tt>null</tt> elements. Method {@link #add add} is based on {@link #offer offer}, but
- * throws exceptions instead of indicating failure via <tt>false</tt> or <tt>null</tt> returns.
+ * allow <code>null</code> elements. Method {@link #add add} is based on {@link #offer offer}, but
+ * throws exceptions instead of indicating failure via <code>false</code> or <code>null</code> returns.
  *
- * <p>An <tt>Offerable</tt> implementation that extends this class must minimally define a method
- * {@link Queue#offer} which does not permit insertion of <tt>null</tt> elements, along with methods
+ * <p>An <code>Offerable</code> implementation that extends this class must minimally define a method
+ * {@link Queue#offer} which does not permit insertion of <code>null</code> elements, along with methods
  * {@link Collection#size}, and {@link Collection#iterator}. Typically, additional methods will be
  * overridden as well. If these requirements cannot be met, consider instead subclassing {@link
  * AbstractCollection}.
@@ -27,17 +27,17 @@ public abstract class AbstractOfferable<E> extends AbstractCollection<E> impleme
 
   /**
    * Adds all of the elements in the specified collection to this queue. Attempts to addAll of a
-   * queue to itself result in <tt>IllegalArgumentException</tt>. Further, the behavior of this
+   * queue to itself result in <code>IllegalArgumentException</code>. Further, the behavior of this
    * operation is undefined if the specified collection is modified while the operation is in
    * progress.
    *
    * <p>This implementation iterates over the specified collection, and adds each element returned
    * by the iterator to this queue, in turn. A runtime exception encountered while trying to add an
-   * element (including, in particular, a <tt>null</tt> element) may result in only some of the
+   * element (including, in particular, a <code>null</code> element) may result in only some of the
    * elements having been successfully added when the associated exception is thrown.
    *
    * @param c collection containing elements to be added to this queue
-   * @return <tt>true</tt> if this queue changed as a result of the call
+   * @return <code>true</code> if this queue changed as a result of the call
    * @throws ClassCastException if the class of an element of the specified collection prevents it
    *     from being added to this queue
    * @throws NullPointerException if the specified collection contains a null element and this queue

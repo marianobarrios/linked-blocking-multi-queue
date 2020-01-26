@@ -26,6 +26,11 @@ spotless {
     }
 }
 
+java {
+    withSourcesJar()
+    withJavadocJar()
+}
+
 publishing {
     publications {
         lbmq(MavenPublication) {
