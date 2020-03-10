@@ -8,13 +8,14 @@ import java.util.Queue;
  * This class provides skeletal implementations of some {@link Offerable} operations. The
  * implementations in this class are appropriate when the base implementation does <em>not</em>
  * allow <code>null</code> elements. Method {@link #add add} is based on {@link #offer offer}, but
- * throws exceptions instead of indicating failure via <code>false</code> or <code>null</code> returns.
+ * throws exceptions instead of indicating failure via <code>false</code> or <code>null</code>
+ * returns.
  *
- * <p>An <code>Offerable</code> implementation that extends this class must minimally define a method
- * {@link Queue#offer} which does not permit insertion of <code>null</code> elements, along with methods
- * {@link Collection#size}, and {@link Collection#iterator}. Typically, additional methods will be
- * overridden as well. If these requirements cannot be met, consider instead subclassing {@link
- * AbstractCollection}.
+ * <p>An <code>Offerable</code> implementation that extends this class must minimally define a
+ * method {@link Queue#offer} which does not permit insertion of <code>null</code> elements, along
+ * with methods {@link Collection#size}, and {@link Collection#iterator}. Typically, additional
+ * methods will be overridden as well. If these requirements cannot be met, consider instead
+ * subclassing {@link AbstractCollection}.
  *
  * @param <E> the type of elements held in this collection
  */

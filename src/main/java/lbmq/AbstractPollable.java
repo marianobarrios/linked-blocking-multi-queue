@@ -6,9 +6,9 @@ import java.util.Queue;
 /**
  * This class provides skeletal implementations of some {@link Pollable} operations. The
  * implementations in this class are appropriate when the base implementation does <em>not</em>
- * allow <code>null</code> elements. Methods {@link #remove remove}, and {@link #element element} are
- * based on {@link #poll poll}, and {@link #peek peek}, respectively, but throw exceptions instead
- * of indicating failure via <code>false</code> or <code>null</code> returns.
+ * allow <code>null</code> elements. Methods {@link #remove remove}, and {@link #element element}
+ * are based on {@link #poll poll}, and {@link #peek peek}, respectively, but throw exceptions
+ * instead of indicating failure via <code>false</code> or <code>null</code> returns.
  *
  * <p>A <code>Pollable</code> implementation that extends this class must minimally define methods
  * {@link Queue#peek} and {@link Queue#poll}. Typically, additional methods will be overridden as
