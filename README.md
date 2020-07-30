@@ -99,7 +99,7 @@ To implement weakly consistent iterators, it appears we need to keep all Nodes G
 
 ### Requirements
 
-TLS Channel requires Java 8 or newer.
+Linked Blocking Multi Queue requires Java 8 or newer.
 
 ### Size and Dependencies
 
