@@ -1,7 +1,0 @@
-language: java
-install:
-  - /bin/true # prevent running assemble first
-jdk:
-  - openjdk8
-  - openjdk11
-  - openjdk12
