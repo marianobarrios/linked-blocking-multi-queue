@@ -1211,7 +1211,7 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
     assertEquals(0, q.totalSize());
     assertEquals(0, sq.size());
     assertEquals(SIZE, l.size());
-    for (int i = 0; i < SIZE; ++i) assertEquals(l.get(i), new Integer(i));
+    for (int i = 0; i < SIZE; ++i) assertEquals(l.get(i), Integer.valueOf(i));
     sq.add(zero);
     sq.add(one);
     assertFalse(q.isEmpty());
@@ -1222,7 +1222,7 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
     assertEquals(0, q.totalSize());
     assertEquals(0, sq.size());
     assertEquals(2, l.size());
-    for (int i = 0; i < 2; ++i) assertEquals(l.get(i), new Integer(i));
+    for (int i = 0; i < 2; ++i) assertEquals(l.get(i), Integer.valueOf(i));
   }
 
   /** drainTo(c) empties queue into another collection c */
@@ -1233,7 +1233,7 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
     q.drainTo(l);
     assertEquals(0, q.totalSize());
     assertEquals(nine.intValue(), l.size());
-    for (int i = 0; i < nine; ++i) assertEquals(l.get(i), new Integer(i));
+    for (int i = 0; i < nine; ++i) assertEquals(l.get(i), Integer.valueOf(i));
   }
 
   /** drainTo(c) empties queue into another collection c */
@@ -1247,7 +1247,7 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
     assertEquals(0, q.totalSize());
     assertEquals(six.intValue(), l1.size());
     for (int i = three; i < nine; ++i) {
-      assertEquals(l1.get(i - three), new Integer(i));
+      assertEquals(l1.get(i - three), Integer.valueOf(i));
     }
     qa.enable(true);
     assertEquals(3, q.totalSize());
@@ -1255,7 +1255,7 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
     q.drainTo(l2);
     assertEquals(0, q.totalSize());
     assertEquals(three.intValue(), l2.size());
-    for (int i = 0; i < three; ++i) assertEquals(l2.get(i), new Integer(i));
+    for (int i = 0; i < three; ++i) assertEquals(l2.get(i), Integer.valueOf(i));
   }
 
   /** drainTo empties full queue, unblocking a waiting put. */
@@ -1274,7 +1274,7 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
     ArrayList<Integer> l = new ArrayList<>();
     q.drainTo(l);
     assertTrue(l.size() >= SIZE);
-    for (int i = 0; i < SIZE; ++i) assertEquals(l.get(i), new Integer(i));
+    for (int i = 0; i < SIZE; ++i) assertEquals(l.get(i), Integer.valueOf(i));
     t.join();
     assertTrue(q.totalSize() + l.size() >= SIZE);
     assertTrue(sq.size() + l.size() >= SIZE);
@@ -1293,7 +1293,7 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
       assertEquals(k, l.size());
       assertEquals(SIZE - k, q.totalSize());
       assertEquals(SIZE - k, sq.size());
-      for (int j = 0; j < k; ++j) assertEquals(l.get(j), new Integer(j));
+      for (int j = 0; j < k; ++j) assertEquals(l.get(j), Integer.valueOf(j));
       do {} while (q.poll() != null);
     }
   }
