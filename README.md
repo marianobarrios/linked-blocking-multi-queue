@@ -2,7 +2,7 @@
 
 _Linked Blocking Multi Queue_ is a concurrent collection that extends the existing [Java concurrent collection library](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/package-summary.html), offering an optionally-bounded blocking "multi-queue" based on linked nodes. That is, essentially, a data structure with several tails but one head, that allows a reader, crucially, to block on more than one queue.
 
-[![Build Status](https://travis-ci.org/marianobarrios/linked-blocking-multi-queue.svg?branch=master)](https://travis-ci.org/marianobarrios/linked-blocking-multi-queue)
+[![Build Status](https://github.com/marianobarrios/linked-blocking-multi-queue/actions/workflows/main.yml/badge.svg)](https://github.com/marianobarrios/linked-blocking-multi-queue/actions)
 
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.marianobarrios/linked-blocking-multi-queue/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.github.marianobarrios/linked-blocking-multi-queue)
 [![javadoc](https://javadoc.io/badge2/com.github.marianobarrios/linked-blocking-multi-queue/javadoc.svg)](https://javadoc.io/doc/com.github.marianobarrios/linked-blocking-multi-queue)
