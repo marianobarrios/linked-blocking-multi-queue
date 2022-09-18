@@ -1371,6 +1371,47 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
     assertEquals(2, q.getPriorityGroupsCount());
   }
 
+  /** {@link lbmq.LinkedBlockingMultiQueue.SubQueue#enable(boolean)} must be idempotent */
+  @Test
+  public void testThatTotalSizeMustNotChangeEnablingAlreadyEnabledQueues(){
+    final LinkedBlockingMultiQueue<QueueKey, Integer> subject = new LinkedBlockingMultiQueue<>();
+    subject.addSubQueue(QueueKey.A, 0);
+    final LinkedBlockingMultiQueue.SubQueue subQueue = subject.getSubQueue(QueueKey.A);
+    subQueue.add(100);
+
+    assertEquals(1, subQueue.size());
+    assertEquals(1, subject.totalSize());
+
+    subQueue.enable(true);
+
+    assertEquals(1, subQueue.size());
+    assertEquals(1, subject.totalSize());
+
+  }
+
+  /** {@link lbmq.LinkedBlockingMultiQueue.SubQueue#enable(boolean)} must be idempotent */
+  @Test
+  public void testThatTotalSizeMustNotChangeDisablingAlreadyDisabledQueues(){
+    final LinkedBlockingMultiQueue<QueueKey, Integer> subject = new LinkedBlockingMultiQueue<>();
+    subject.addSubQueue(QueueKey.A, 0);
+    final LinkedBlockingMultiQueue.SubQueue subQueue = subject.getSubQueue(QueueKey.A);
+    subQueue.add(100);
+
+    assertTrue(subQueue.isEnabled());
+    assertEquals(1, subQueue.size());
+    assertEquals(1, subject.totalSize());
+
+    subQueue.enable(false);
+
+    assertEquals(1, subQueue.size());
+    assertEquals(0, subject.totalSize());
+
+    subQueue.enable(false);
+
+    assertEquals(1, subQueue.size());
+    assertEquals(0, subject.totalSize());
+  }
+
   void checkEmpty(LinkedBlockingMultiQueue<?, ?> q) {
     try {
       assertTrue(q.isEmpty());
