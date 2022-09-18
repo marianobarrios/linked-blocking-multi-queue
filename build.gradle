@@ -22,7 +22,7 @@ dependencies {
 
 spotless {
     java {
-        googleJavaFormat()
+        palantirJavaFormat()
     }
 }
 
