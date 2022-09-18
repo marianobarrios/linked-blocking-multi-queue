@@ -511,6 +511,10 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
     public void enable(boolean status) {
       fullyLock();
       try {
+        boolean notChanged = status == enabled;
+        if(notChanged){
+          return;
+        }
         enabled = status;
         if (status) {
           // potentially unblock waiting polls
