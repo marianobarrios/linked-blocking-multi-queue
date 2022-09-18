@@ -512,7 +512,7 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
       fullyLock();
       try {
         boolean notChanged = status == enabled;
-        if(notChanged){
+        if (notChanged) {
           return;
         }
         enabled = status;

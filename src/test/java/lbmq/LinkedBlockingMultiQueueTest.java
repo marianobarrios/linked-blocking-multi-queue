@@ -1373,7 +1373,7 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
 
   /** {@link lbmq.LinkedBlockingMultiQueue.SubQueue#enable(boolean)} must be idempotent */
   @Test
-  public void testThatTotalSizeMustNotChangeEnablingAlreadyEnabledQueues(){
+  public void testThatTotalSizeMustNotChangeEnablingAlreadyEnabledQueues() {
     final LinkedBlockingMultiQueue<QueueKey, Integer> subject = new LinkedBlockingMultiQueue<>();
     subject.addSubQueue(QueueKey.A, 0);
     final LinkedBlockingMultiQueue.SubQueue subQueue = subject.getSubQueue(QueueKey.A);
@@ -1386,12 +1386,11 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
 
     assertEquals(1, subQueue.size());
     assertEquals(1, subject.totalSize());
-
   }
 
   /** {@link lbmq.LinkedBlockingMultiQueue.SubQueue#enable(boolean)} must be idempotent */
   @Test
-  public void testThatTotalSizeMustNotChangeDisablingAlreadyDisabledQueues(){
+  public void testThatTotalSizeMustNotChangeDisablingAlreadyDisabledQueues() {
     final LinkedBlockingMultiQueue<QueueKey, Integer> subject = new LinkedBlockingMultiQueue<>();
     subject.addSubQueue(QueueKey.A, 0);
     final LinkedBlockingMultiQueue.SubQueue subQueue = subject.getSubQueue(QueueKey.A);
