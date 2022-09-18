@@ -9,8 +9,6 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static org.junit.Assert.*;
 
-import java.io.ByteArrayOutputStream;
-import java.io.ObjectOutputStream;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.concurrent.CountDownLatch;
@@ -69,7 +67,7 @@ public class TestCase {
     }
 
     /** The first exception encountered if any threadAssertXXX method fails. */
-    private final AtomicReference<Throwable> threadFailure = new AtomicReference<Throwable>(null);
+    private final AtomicReference<Throwable> threadFailure = new AtomicReference<>(null);
 
     /**
      * Records an exception so that it can be rethrown later in the test harness thread, triggering a
@@ -92,16 +90,21 @@ public class TestCase {
     public void tearDown() throws Exception {
         Throwable t = threadFailure.getAndSet(null);
         if (t != null) {
-            if (t instanceof Error) throw (Error) t;
-            else if (t instanceof RuntimeException) throw (RuntimeException) t;
-            else if (t instanceof Exception) throw (Exception) t;
-            else {
+            if (t instanceof Error) {
+                throw (Error) t;
+            } else if (t instanceof RuntimeException) {
+                throw (RuntimeException) t;
+            } else if (t instanceof Exception) {
+                throw (Exception) t;
+            } else {
                 AssertionFailedError afe = new AssertionFailedError(t.toString());
                 afe.initCause(t);
                 throw afe;
             }
         }
-        if (Thread.interrupted()) throw new AssertionFailedError("interrupt status set in main thread");
+        if (Thread.interrupted()) {
+            throw new AssertionFailedError("interrupt status set in main thread");
+        }
     }
 
     /**
@@ -124,9 +127,11 @@ public class TestCase {
     public void threadUnexpectedException(Throwable t) {
         threadRecordFailure(t);
         t.printStackTrace();
-        if (t instanceof RuntimeException) throw (RuntimeException) t;
-        else if (t instanceof Error) throw (Error) t;
-        else {
+        if (t instanceof RuntimeException) {
+            throw (RuntimeException) t;
+        } else if (t instanceof Error) {
+            throw (Error) t;
+        } else {
             AssertionFailedError afe = new AssertionFailedError("unexpected exception: " + t);
             afe.initCause(t);
             throw afe;
@@ -141,13 +146,16 @@ public class TestCase {
         long startTime = System.nanoTime();
         long ns = millis * 1000 * 1000;
         for (; ; ) {
-            if (millis > 0L) Thread.sleep(millis);
-            else
+            if (millis > 0L) {
+                Thread.sleep(millis);
+            } else {
                 // too short to sleep
                 Thread.yield();
+            }
             long d = ns - (System.nanoTime() - startTime);
-            if (d > 0L) millis = d / (1000 * 1000);
-            else break;
+            if (d > 0L) {
+                millis = d / (1000 * 1000);
+            } else break;
         }
     }
 
@@ -155,10 +163,11 @@ public class TestCase {
     void joinPool(ExecutorService exec) {
         try {
             exec.shutdown();
-            if (!exec.awaitTermination(2 * LONG_DELAY_MS, MILLISECONDS))
+            if (!exec.awaitTermination(2 * LONG_DELAY_MS, MILLISECONDS)) {
                 fail("ExecutorService " + exec + " did not terminate in a timely manner");
+            }
         } catch (SecurityException ok) {
-            // Allowed in case test doesn't have privs
+            // Allowed in case test doesn't have privileges
         } catch (InterruptedException fail) {
             fail("Unexpected InterruptedException");
         }
@@ -212,9 +221,11 @@ public class TestCase {
         long startTime = System.nanoTime();
         for (; ; ) {
             Thread.State s = thread.getState();
-            if (s == Thread.State.BLOCKED || s == Thread.State.WAITING || s == Thread.State.TIMED_WAITING) return;
-            else if (s == Thread.State.TERMINATED) fail("Unexpected thread termination");
-            else if (millisElapsedSince(startTime) > timeoutMillis) {
+            if (s == Thread.State.BLOCKED || s == Thread.State.WAITING || s == Thread.State.TIMED_WAITING) {
+                return;
+            } else if (s == Thread.State.TERMINATED) {
+                fail("Unexpected thread termination");
+            } else if (millisElapsedSince(startTime) > timeoutMillis) {
                 threadAssertTrue(thread.isAlive());
                 return;
             }
@@ -291,7 +302,7 @@ public class TestCase {
      * A CyclicBarrier that uses timed await and fails with AssertionFailedErrors instead of throwing
      * checked exceptions.
      */
-    public class CheckedBarrier extends CyclicBarrier {
+    public static class CheckedBarrier extends CyclicBarrier {
         public CheckedBarrier(int parties) {
             super(parties);
         }
@@ -309,25 +320,12 @@ public class TestCase {
         }
     }
 
-    byte[] serialBytes(Object o) {
-        try {
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            ObjectOutputStream oos = new ObjectOutputStream(bos);
-            oos.writeObject(o);
-            oos.flush();
-            oos.close();
-            return bos.toByteArray();
-        } catch (Throwable fail) {
-            threadUnexpectedException(fail);
-            return new byte[0];
-        }
-    }
-
     public void assertIteratorExhausted(Iterator<?> it) {
         try {
             it.next();
             shouldThrow();
         } catch (NoSuchElementException success) {
+            // expected
         }
         assertFalse(it.hasNext());
     }

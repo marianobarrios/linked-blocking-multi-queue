@@ -52,7 +52,9 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
         LinkedBlockingMultiQueue<QueueKey, Integer>.SubQueue sq = q.getSubQueue(QueueKey.A);
         assertTrue(q.isEmpty());
         assertTrue(sq.isEmpty());
-        for (int i = 0; i < n; i++) assertTrue(sq.offer(i));
+        for (int i = 0; i < n; i++) {
+            assertTrue(sq.offer(i));
+        }
         assertFalse(q.isEmpty());
         assertFalse(sq.isEmpty());
         assertEquals(0, sq.remainingCapacity());
@@ -139,6 +141,7 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
             sq.offer(null, LONG_DELAY_MS, MILLISECONDS);
             shouldThrow();
         } catch (NullPointerException success) {
+            // expected
         }
         assertTrue(millisElapsedSince(startTime) < LONG_DELAY_MS);
     }
@@ -196,17 +199,19 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
         LinkedBlockingMultiQueue<QueueKey, Integer> q = createSingleQueue();
         LinkedBlockingMultiQueue<QueueKey, Integer>.SubQueue sq = q.getSubQueue(QueueKey.A);
         final int[] ns = {0, -1, -42, Integer.MIN_VALUE};
-        for (int n : ns) assertEquals(0, q.drainTo(new ArrayList<>(), n));
+        for (int n : ns) {
+            assertEquals(0, q.drainTo(new ArrayList<>(), n));
+        }
         if (sq.remainingCapacity() > 0) {
             // Not SynchronousQueue, that is
             Integer one = makeElement(1);
             sq.add(one);
-            ArrayList<Integer> c = new ArrayList<Integer>();
-            for (int n : ns) assertEquals(0, q.drainTo(new ArrayList<>(), n));
+            for (int n : ns) {
+                assertEquals(0, q.drainTo(new ArrayList<>(), n));
+            }
             assertEquals(1, sq.size());
             assertEquals(1, q.totalSize());
             assertSame(one, q.poll());
-            assertTrue(c.isEmpty());
         }
     }
 
@@ -230,6 +235,7 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
                     q.poll(LONG_DELAY_MS, MILLISECONDS);
                     shouldThrow();
                 } catch (InterruptedException success) {
+                    // expected
                 }
                 assertFalse(Thread.interrupted());
 
@@ -238,6 +244,7 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
                     q.poll(LONG_DELAY_MS, MILLISECONDS);
                     shouldThrow();
                 } catch (InterruptedException success) {
+                    // expected
                 }
                 assertFalse(Thread.interrupted());
             }
@@ -256,7 +263,7 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
 
     /** timed poll before a delayed offer times out; after offer succeeds; on interruption throws */
     @Test
-    public void testTimedPollWithOfferMultiDisabled() throws InterruptedException {
+    public void testTimedPollWithOfferMultiDisabled() {
         final LinkedBlockingMultiQueue<QueueKey, Integer> q = createSingleQueue();
         final LinkedBlockingMultiQueue<QueueKey, Integer>.SubQueue sq = q.getSubQueue(QueueKey.A);
         final CheckedBarrier barrier = new CheckedBarrier(2);
@@ -281,7 +288,7 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
 
     /** timed poll before a delayed offer times out, after offer succeeds; on interruption throws */
     @Test
-    public void testTimedPollWithOfferMultiAdded() throws InterruptedException {
+    public void testTimedPollWithOfferMultiAdded() {
         final LinkedBlockingMultiQueue<QueueKey, Integer> q = createSingleQueue();
         final LinkedBlockingMultiQueue<QueueKey, Integer>.SubQueue qa = q.getSubQueue(QueueKey.A);
         final CheckedBarrier barrier = new CheckedBarrier(2);
@@ -318,6 +325,7 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
                     q.take();
                     shouldThrow();
                 } catch (InterruptedException success) {
+                    // expected
                 }
                 assertFalse(Thread.interrupted());
             }
@@ -340,6 +348,7 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
                     q.take();
                     shouldThrow();
                 } catch (InterruptedException success) {
+                    // expected
                 }
                 assertFalse(Thread.interrupted());
             }
@@ -360,6 +369,7 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
                     q.poll(2 * LONG_DELAY_MS, MILLISECONDS);
                     shouldThrow();
                 } catch (InterruptedException success) {
+                    // expected
                 }
                 assertFalse(Thread.interrupted());
             }
@@ -382,6 +392,7 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
                     q.poll(2 * LONG_DELAY_MS, MILLISECONDS);
                     shouldThrow();
                 } catch (InterruptedException success) {
+                    // expected
                 }
                 assertFalse(Thread.interrupted());
             }
@@ -402,7 +413,9 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
         assertFalse(sq.contains(makeElement(99)));
         assertFalse(sq.remove(makeElement(99)));
         checkEmpty(q);
-        for (int i = 0; i < size; i++) sq.add(elts[i] = makeElement(i));
+        for (int i = 0; i < size; i++) {
+            sq.add(elts[i] = makeElement(i));
+        }
         for (int i = 1; i < size; i += 2) {
             for (int pass = 0; pass < 2; pass++) {
                 assertEquals((pass == 0), sq.contains(elts[i]));
@@ -474,7 +487,9 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
     public void testAdd() {
         LinkedBlockingMultiQueue<QueueKey, Integer> q = createSingleQueue(SIZE);
         LinkedBlockingMultiQueue<QueueKey, Integer>.SubQueue sq = q.getSubQueue(QueueKey.A);
-        for (int i = 0; i < SIZE; ++i) assertTrue(sq.add(i));
+        for (int i = 0; i < SIZE; ++i) {
+            assertTrue(sq.add(i));
+        }
         assertEquals(0, sq.remainingCapacity());
         sq.add(SIZE);
     }
@@ -495,7 +510,9 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
         LinkedBlockingMultiQueue<QueueKey, Integer> q = createSingleQueue(SIZE);
         LinkedBlockingMultiQueue<QueueKey, Integer>.SubQueue sq = q.getSubQueue(QueueKey.A);
         Integer[] ints = new Integer[SIZE];
-        for (int i = 0; i < SIZE - 1; ++i) ints[i] = i;
+        for (int i = 0; i < SIZE - 1; ++i) {
+            ints[i] = i;
+        }
         Collection<Integer> elements = Arrays.asList(ints);
         sq.addAll(elements);
     }
@@ -506,7 +523,9 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
         LinkedBlockingMultiQueue<QueueKey, Integer> q = createSingleQueue(SIZE - 1);
         LinkedBlockingMultiQueue<QueueKey, Integer>.SubQueue sq = q.getSubQueue(QueueKey.A);
         Integer[] ints = new Integer[SIZE];
-        for (int i = 0; i < SIZE; ++i) ints[i] = i;
+        for (int i = 0; i < SIZE; ++i) {
+            ints[i] = i;
+        }
         Collection<Integer> elements = Arrays.asList(ints);
         sq.addAll(elements);
     }
@@ -516,12 +535,16 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
     public void testAddAll5() {
         Integer[] empty = new Integer[0];
         Integer[] ints = new Integer[SIZE];
-        for (int i = 0; i < SIZE; ++i) ints[i] = i;
+        for (int i = 0; i < SIZE; ++i) {
+            ints[i] = i;
+        }
         LinkedBlockingMultiQueue<QueueKey, Integer> q = createSingleQueue(SIZE);
         LinkedBlockingMultiQueue<QueueKey, Integer>.SubQueue sq = q.getSubQueue(QueueKey.A);
         assertFalse(sq.addAll(Arrays.asList(empty)));
         assertTrue(sq.addAll(Arrays.asList(ints)));
-        for (int i = 0; i < SIZE; ++i) assertEquals(ints[i], q.poll());
+        for (int i = 0; i < SIZE; ++i) {
+            assertEquals(ints[i], q.poll());
+        }
     }
 
     /** all elements successfully put are contained */
@@ -545,7 +568,9 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
         final CountDownLatch pleaseInterrupt = new CountDownLatch(1);
         Thread t = newStartedThread(new CheckedRunnable() {
             public void realRun() throws InterruptedException {
-                for (int i = 0; i < SIZE; ++i) sq.put(i);
+                for (int i = 0; i < SIZE; ++i) {
+                    sq.put(i);
+                }
                 assertEquals(SIZE, sq.size());
                 assertEquals(0, sq.remainingCapacity());
                 Thread.currentThread().interrupt();
@@ -553,6 +578,7 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
                     sq.put(99);
                     shouldThrow();
                 } catch (InterruptedException success) {
+                    // expected
                 }
                 assertFalse(Thread.interrupted());
 
@@ -561,6 +587,7 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
                     sq.put(99);
                     shouldThrow();
                 } catch (InterruptedException success) {
+                    // expected
                 }
                 assertFalse(Thread.interrupted());
             }
@@ -584,7 +611,9 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
         final CountDownLatch pleaseInterrupt = new CountDownLatch(1);
         Thread t = newStartedThread(new CheckedRunnable() {
             public void realRun() throws InterruptedException {
-                for (int i = 0; i < capacity; i++) sq.put(i);
+                for (int i = 0; i < capacity; i++) {
+                    sq.put(i);
+                }
                 pleaseTake.countDown();
                 sq.put(86);
                 pleaseInterrupt.countDown();
@@ -592,6 +621,7 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
                     sq.put(99);
                     shouldThrow();
                 } catch (InterruptedException success) {
+                    // expected
                 }
                 assertFalse(Thread.interrupted());
             }
@@ -624,6 +654,7 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
                     sq.offer(new Object(), 2 * LONG_DELAY_MS, MILLISECONDS);
                     shouldThrow();
                 } catch (InterruptedException success) {
+                    // expected
                 }
             }
         });
@@ -679,6 +710,7 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
                     q.take();
                     shouldThrow();
                 } catch (InterruptedException success) {
+                    // expected
                 }
                 assertFalse(Thread.interrupted());
                 pleaseInterrupt.countDown();
@@ -686,6 +718,7 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
                     q.take();
                     shouldThrow();
                 } catch (InterruptedException success) {
+                    // expected
                 }
                 assertFalse(Thread.interrupted());
             }
@@ -853,6 +886,7 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
     }
 
     /** element returns next element, or throws NSEE if empty */
+    @Test
     public void testElementMultiDisabled() {
         final LinkedBlockingMultiQueue<QueueKey, Integer> q = populatedMultiQueue();
         LinkedBlockingMultiQueue<QueueKey, Integer>.SubQueue qa = q.getSubQueue(QueueKey.A);
@@ -865,6 +899,7 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
             q.element();
             shouldThrow();
         } catch (NoSuchElementException success) {
+            // expected
         }
         qa.enable(true);
         for (int i = 0; i < three; ++i) {
@@ -875,10 +910,11 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
             q.element();
             shouldThrow();
         } catch (NoSuchElementException success) {
+            // expected
         }
     }
 
-    /** remove removes next element, or throws NSEE if empty */
+    /** removes next element, or throws NSEE if empty */
     @Test(expected = NoSuchElementException.class)
     public void testRemove() {
         final LinkedBlockingMultiQueue<QueueKey, Integer> q = populatedSingleQueue(SIZE);
@@ -888,7 +924,7 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
         q.remove();
     }
 
-    /** remove removes next element, or throws NSEE if empty */
+    /** removes next element, or throws NSEE if empty */
     @Test(expected = NoSuchElementException.class)
     public void testRemoveMulti() {
         final LinkedBlockingMultiQueue<QueueKey, Integer> q = populatedMultiQueue();
@@ -967,8 +1003,11 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
         final LinkedBlockingMultiQueue<QueueKey, Integer>.SubQueue sq2 = q2.getSubQueue(QueueKey.A);
         for (int i = 0; i < SIZE; ++i) {
             boolean changed = sq1.retainAll(sq2);
-            if (i == 0) assertFalse(changed);
-            else assertTrue(changed);
+            if (i == 0) {
+                assertFalse(changed);
+            } else {
+                assertTrue(changed);
+            }
             assertTrue(sq1.containsAll(sq2));
             assertEquals(SIZE - i, q1.totalSize());
             assertEquals(SIZE - i, sq1.size());
@@ -1000,18 +1039,22 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
         final LinkedBlockingMultiQueue<QueueKey, Integer> q = populatedSingleQueue(SIZE);
         final LinkedBlockingMultiQueue<QueueKey, Integer>.SubQueue sq = q.getSubQueue(QueueKey.A);
         Object[] o = sq.toArray();
-        for (int i = 0; i < o.length; i++) assertSame(o[i], q.poll());
+        for (int i = 0; i < o.length; i++) {
+            assertSame(o[i], q.poll());
+        }
     }
 
     /** toArray(a) contains all elements in FIFO order */
     @Test
-    public void testToArray2() throws InterruptedException {
+    public void testToArray2() {
         final LinkedBlockingMultiQueue<QueueKey, Integer> q = populatedSingleQueue(SIZE);
         final LinkedBlockingMultiQueue<QueueKey, Integer>.SubQueue sq = q.getSubQueue(QueueKey.A);
         Integer[] ints = new Integer[SIZE];
         Integer[] array = sq.toArray(ints);
         assertSame(ints, array);
-        for (int i = 0; i < ints.length; i++) assertSame(ints[i], q.poll());
+        for (int i = 0; i < ints.length; i++) {
+            assertSame(ints[i], q.poll());
+        }
     }
 
     /** toArray(incompatible array type) throws ArrayStoreException */
@@ -1029,12 +1072,16 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
         final LinkedBlockingMultiQueue<QueueKey, Integer>.SubQueue sq = q.getSubQueue(QueueKey.A);
         Iterator<Integer> it = sq.iterator();
         int i;
-        for (i = 0; it.hasNext(); i++) assertTrue(sq.contains(it.next()));
+        for (i = 0; it.hasNext(); i++) {
+            assertTrue(sq.contains(it.next()));
+        }
         assertEquals(i, SIZE);
         assertIteratorExhausted(it);
 
         it = sq.iterator();
-        for (i = 0; it.hasNext(); i++) assertEquals(it.next(), q.take());
+        for (i = 0; it.hasNext(); i++) {
+            assertEquals(it.next(), q.take());
+        }
         assertEquals(i, SIZE);
         assertIteratorExhausted(it);
     }
@@ -1074,8 +1121,8 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
         sq.add(three);
         assertEquals(0, sq.remainingCapacity());
         int k = 0;
-        for (Iterator<Integer> it = sq.iterator(); it.hasNext(); ) {
-            assertEquals(++k, it.next().intValue());
+        for (int value : sq) {
+            assertEquals(++k, value);
         }
         assertEquals(3, k);
     }
@@ -1088,9 +1135,8 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
         sq.add(one);
         sq.add(two);
         sq.add(three);
-        for (Iterator<Integer> it = sq.iterator(); it.hasNext(); ) {
+        for (int ignored : sq) {
             q.remove();
-            it.next();
         }
         assertEquals(0, sq.size());
         assertEquals(0, q.totalSize());
@@ -1157,22 +1203,6 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
         joinPool(executor);
     }
 
-    /** A deserialized serialized queue has same elements in same order */
-    // public void testSerialization() throws Exception {
-    // Queue x = populatedQueue(SIZE);
-    // Queue y = serialClone(x);
-    //
-    // assertNotSame(x, y);
-    // assertEquals(x.size(), y.size());
-    // assertEquals(x.toString(), y.toString());
-    // assertTrue(Arrays.equals(x.toArray(), y.toArray()));
-    // while (!x.isEmpty()) {
-    // assertFalse(y.isEmpty());
-    // assertEquals(x.remove(), y.remove());
-    // }
-    // assertTrue(y.isEmpty());
-    // }
-
     /** drainTo(c) empties queue into another collection c */
     @Test
     public void testDrainTo() {
@@ -1183,7 +1213,9 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
         assertEquals(0, q.totalSize());
         assertEquals(0, sq.size());
         assertEquals(SIZE, l.size());
-        for (int i = 0; i < SIZE; ++i) assertEquals(l.get(i), Integer.valueOf(i));
+        for (int i = 0; i < SIZE; ++i) {
+            assertEquals(l.get(i), Integer.valueOf(i));
+        }
         sq.add(zero);
         sq.add(one);
         assertFalse(q.isEmpty());
@@ -1194,7 +1226,9 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
         assertEquals(0, q.totalSize());
         assertEquals(0, sq.size());
         assertEquals(2, l.size());
-        for (int i = 0; i < 2; ++i) assertEquals(l.get(i), Integer.valueOf(i));
+        for (int i = 0; i < 2; ++i) {
+            assertEquals(l.get(i), Integer.valueOf(i));
+        }
     }
 
     /** drainTo(c) empties queue into another collection c */
@@ -1205,7 +1239,9 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
         q.drainTo(l);
         assertEquals(0, q.totalSize());
         assertEquals(nine.intValue(), l.size());
-        for (int i = 0; i < nine; ++i) assertEquals(l.get(i), Integer.valueOf(i));
+        for (int i = 0; i < nine; ++i) {
+            assertEquals(l.get(i), Integer.valueOf(i));
+        }
     }
 
     /** drainTo(c) empties queue into another collection c */
@@ -1227,7 +1263,9 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
         q.drainTo(l2);
         assertEquals(0, q.totalSize());
         assertEquals(three.intValue(), l2.size());
-        for (int i = 0; i < three; ++i) assertEquals(l2.get(i), Integer.valueOf(i));
+        for (int i = 0; i < three; ++i) {
+            assertEquals(l2.get(i), Integer.valueOf(i));
+        }
     }
 
     /** drainTo empties full queue, unblocking a waiting put. */
@@ -1244,7 +1282,9 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
         ArrayList<Integer> l = new ArrayList<>();
         q.drainTo(l);
         assertTrue(l.size() >= SIZE);
-        for (int i = 0; i < SIZE; ++i) assertEquals(l.get(i), Integer.valueOf(i));
+        for (int i = 0; i < SIZE; ++i) {
+            assertEquals(l.get(i), Integer.valueOf(i));
+        }
         t.join();
         assertTrue(q.totalSize() + l.size() >= SIZE);
         assertTrue(sq.size() + l.size() >= SIZE);
@@ -1256,15 +1296,21 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
         final LinkedBlockingMultiQueue<QueueKey, Integer> q = createSingleQueue();
         final LinkedBlockingMultiQueue<QueueKey, Integer>.SubQueue sq = q.getSubQueue(QueueKey.A);
         for (int i = 0; i < SIZE + 2; ++i) {
-            for (int j = 0; j < SIZE; j++) assertTrue(sq.offer(j));
+            for (int j = 0; j < SIZE; j++) {
+                assertTrue(sq.offer(j));
+            }
             ArrayList<Integer> l = new ArrayList<>();
             q.drainTo(l, i);
-            int k = (i < SIZE) ? i : SIZE;
+            int k = Math.min(i, SIZE);
             assertEquals(k, l.size());
             assertEquals(SIZE - k, q.totalSize());
             assertEquals(SIZE - k, sq.size());
-            for (int j = 0; j < k; ++j) assertEquals(l.get(j), Integer.valueOf(j));
-            do {} while (q.poll() != null);
+            for (int j = 0; j < k; ++j) {
+                assertEquals(l.get(j), Integer.valueOf(j));
+            }
+            do {
+                // empty
+            } while (q.poll() != null);
         }
     }
 
@@ -1346,7 +1392,7 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
     public void testThatTotalSizeMustNotChangeEnablingAlreadyEnabledQueues() {
         final LinkedBlockingMultiQueue<QueueKey, Integer> subject = new LinkedBlockingMultiQueue<>();
         subject.addSubQueue(QueueKey.A, 0);
-        final LinkedBlockingMultiQueue.SubQueue subQueue = subject.getSubQueue(QueueKey.A);
+        final LinkedBlockingMultiQueue<QueueKey, Integer>.SubQueue subQueue = subject.getSubQueue(QueueKey.A);
         subQueue.add(100);
 
         assertEquals(1, subQueue.size());
@@ -1363,7 +1409,7 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
     public void testThatTotalSizeMustNotChangeDisablingAlreadyDisabledQueues() {
         final LinkedBlockingMultiQueue<QueueKey, Integer> subject = new LinkedBlockingMultiQueue<>();
         subject.addSubQueue(QueueKey.A, 0);
-        final LinkedBlockingMultiQueue.SubQueue subQueue = subject.getSubQueue(QueueKey.A);
+        final LinkedBlockingMultiQueue<QueueKey, Integer>.SubQueue subQueue = subject.getSubQueue(QueueKey.A);
         subQueue.add(100);
 
         assertTrue(subQueue.isEnabled());
@@ -1395,11 +1441,13 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
                 q.element();
                 shouldThrow();
             } catch (NoSuchElementException success) {
+                // expected
             }
             try {
                 q.remove();
                 shouldThrow();
             } catch (NoSuchElementException success) {
+                // expected
             }
         } catch (InterruptedException fail) {
             threadUnexpectedException(fail);
@@ -1412,13 +1460,14 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
 
         assertEquals(q.toString(), "[]");
 
-        assertTrue(Arrays.equals(q.toArray(), new Object[0]));
+        assertArrayEquals(q.toArray(), new Object[0]);
         assertFalse(q.iterator().hasNext());
 
         try {
             q.iterator().next();
             shouldThrow();
         } catch (NoSuchElementException success) {
+            // expected
         }
     }
 }
