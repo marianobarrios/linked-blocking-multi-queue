@@ -5,6 +5,7 @@
  */
 package lbmq;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -28,7 +29,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * or disabled. A disabled queue is not considered for polling (in the event that all the queue are
  * disabled, any blocking operation would do so trying to read, as if all the queues were empty).
  * Elements are taken from the set of enabled queues, obeying the established priority (queues with
- * the same priority are served round robin).
+ * the same priority are served round-robin).
  *
  * <p>A disabled queue accepts new elements normally until it reaches the maximum capacity (if any).
  *
@@ -140,8 +141,12 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
                     removed.putLock.lock();
                     try {
                         it.remove();
-                        if (nextIdx == queues.size()) nextIdx = 0;
-                        if (subQueue.enabled) totalCount.getAndAdd(-removed.size());
+                        if (nextIdx == queues.size()) {
+                            nextIdx = 0;
+                        }
+                        if (subQueue.enabled) {
+                            totalCount.getAndAdd(-removed.size());
+                        }
                         return;
                     } finally {
                         removed.putLock.unlock();
@@ -157,8 +162,12 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
             do {
                 SubQueue child = queues.get(nextIdx);
                 nextIdx += 1;
-                if (nextIdx == queues.size()) nextIdx = 0;
-                if (child.enabled && child.size() > 0) return child;
+                if (nextIdx == queues.size()) {
+                    nextIdx = 0;
+                }
+                if (child.enabled && child.size() > 0) {
+                    return child;
+                }
             } while (nextIdx != startIdx);
             return null;
         }
@@ -170,13 +179,17 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
             do {
                 SubQueue child = queues.get(nextIdx);
                 nextIdx += 1;
-                if (nextIdx == queues.size()) nextIdx = 0;
+                if (nextIdx == queues.size()) {
+                    nextIdx = 0;
+                }
                 if (child.enabled && child.size() > 0) {
                     emptyQueues = 0;
                     c.add(child.dequeue());
                     drained += 1;
                     int oldSize = child.count.getAndDecrement();
-                    if (oldSize == child.capacity) child.signalNotFull();
+                    if (oldSize == child.capacity) {
+                        child.signalNotFull();
+                    }
                 } else {
                     emptyQueues += 1;
                 }
@@ -193,7 +206,9 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
                     return child.head.next.item;
                 } else {
                     nextIdx += 1;
-                    if (nextIdx == queues.size()) nextIdx = 0;
+                    if (nextIdx == queues.size()) {
+                        nextIdx = 0;
+                    }
                 }
             } while (nextIdx != startIdx);
             return null;
@@ -308,7 +323,9 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
         takeLock.lockInterruptibly();
         try {
             while (totalCount.get() == 0) {
-                if (remaining <= 0) return null;
+                if (remaining <= 0) {
+                    return null;
+                }
                 remaining = notEmpty.awaitNanos(remaining);
             }
             // at this point we know there is an element
@@ -362,7 +379,9 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
         int oldSize;
         takeLock.lock();
         try {
-            if (totalCount.get() == 0) return null;
+            if (totalCount.get() == 0) {
+                return null;
+            }
             // at this point we know there is an element
             subQueue = subQueueSelection.getNext();
             element = subQueue.dequeue();
@@ -384,8 +403,11 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
     public E peek() {
         takeLock.lock();
         try {
-            if (totalCount.get() == 0) return null;
-            else return subQueueSelection.peek();
+            if (totalCount.get() == 0) {
+                return null;
+            } else {
+                return subQueueSelection.peek();
+            }
         } finally {
             takeLock.unlock();
         }
@@ -416,9 +438,12 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
     }
 
     public int drainTo(Collection<? super E> c, int maxElements) {
-        if (c == null) throw new NullPointerException();
-        if (c == this) throw new IllegalArgumentException();
-        if (maxElements <= 0) return 0;
+        if (c == null) {
+            throw new NullPointerException();
+        }
+        if (maxElements <= 0) {
+            return 0;
+        }
         takeLock.lock();
         try {
             int n = Math.min(maxElements, totalCount.get());
@@ -478,8 +503,7 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
         private Node<E> last = head;
 
         /**
-         * Atomically removes all of the elements from this queue. The queue will be empty after this
-         * call returns.
+         * Atomically removes all the elements from this queue. The queue will be empty after this call returns.
          */
         public void clear() {
             fullyLock();
@@ -494,15 +518,19 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
                 }
                 head = last;
                 int oldCapacity = count.getAndSet(0);
-                if (oldCapacity == capacity) notFull.signal();
-                if (enabled) totalCount.getAndAdd(-oldCapacity);
+                if (oldCapacity == capacity) {
+                    notFull.signal();
+                }
+                if (enabled) {
+                    totalCount.getAndAdd(-oldCapacity);
+                }
             } finally {
                 fullyUnlock();
             }
         }
 
         /**
-         * Enable or disable this sub-queue. Enabled queues's elements are taken from the common head of
+         * Enable or disable this sub-queue. Enabled queues' elements are taken from the common head of
          * the multi-queue. Elements from disabled queues are never taken. Elements can be added to a
          * queue regardless of this status (if there is enough remaining capacity).
          *
@@ -576,7 +604,9 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
         }
 
         public void put(E e) throws InterruptedException {
-            if (e == null) throw new NullPointerException();
+            if (e == null) {
+                throw new NullPointerException();
+            }
             long oldSize = -1;
             /*
              * As this method never fails to insert, it is more efficient to pre-create the node outside the lock, to
@@ -599,7 +629,9 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
                     // queue not full after adding, notify next offerer
                     notFull.signal();
                 }
-                if (enabled) oldSize = totalCount.getAndIncrement();
+                if (enabled) {
+                    oldSize = totalCount.getAndIncrement();
+                }
             } finally {
                 putLock.unlock();
             }
@@ -610,13 +642,17 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
         }
 
         public boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException {
-            if (e == null) throw new NullPointerException();
+            if (e == null) {
+                throw new NullPointerException();
+            }
             long nanos = unit.toNanos(timeout);
             long oldSize = -1;
             putLock.lockInterruptibly();
             try {
                 while (count.get() == capacity) {
-                    if (nanos <= 0) return false;
+                    if (nanos <= 0) {
+                        return false;
+                    }
                     nanos = notFull.awaitNanos(nanos);
                 }
                 enqueue(new Node<>(e));
@@ -636,12 +672,18 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
         }
 
         public boolean offer(E e) {
-            if (e == null) throw new NullPointerException();
+            if (e == null) {
+                throw new NullPointerException();
+            }
             long oldSize = -1;
-            if (count.get() == capacity) return false;
+            if (count.get() == capacity) {
+                return false;
+            }
             putLock.lock();
             try {
-                if (count.get() == capacity) return false;
+                if (count.get() == capacity) {
+                    return false;
+                }
                 enqueue(new Node<>(e));
                 if (count.getAndIncrement() + 1 < capacity) {
                     // queue not full after adding, notify next offerer
@@ -659,7 +701,9 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
         }
 
         public boolean remove(Object o) {
-            if (o == null) return false;
+            if (o == null) {
+                return false;
+            }
             fullyLock();
             try {
                 for (Node<E> trail = head, p = trail.next; p != null; trail = p, p = p.next) {
@@ -675,10 +719,16 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
         }
 
         public boolean contains(Object o) {
-            if (o == null) return false;
+            if (o == null) {
+                return false;
+            }
             fullyLock();
             try {
-                for (Node<E> p = head.next; p != null; p = p.next) if (o.equals(p.item)) return true;
+                for (Node<E> p = head.next; p != null; p = p.next) {
+                    if (o.equals(p.item)) {
+                        return true;
+                    }
+                }
                 return false;
             } finally {
                 fullyUnlock();
@@ -693,9 +743,15 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
             // guarantee.
             p.item = null;
             trail.next = p.next;
-            if (last == p) last = trail;
-            if (count.getAndDecrement() == capacity) notFull.signal();
-            if (enabled) totalCount.getAndDecrement();
+            if (last == p) {
+                last = trail;
+            }
+            if (count.getAndDecrement() == capacity) {
+                notFull.signal();
+            }
+            if (enabled) {
+                totalCount.getAndDecrement();
+            }
         }
 
         /** Locks to prevent both puts and takes. */
@@ -710,7 +766,7 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
             takeLock.unlock();
         }
 
-        /** Tells whether both locks are held by current thread. */
+        /* Tells whether both locks are held by current thread. */
         // private boolean isFullyLocked() {
         // return putLock.isHeldByCurrentThread() && takeLock.isHeldByCurrentThread();
         // }
@@ -736,16 +792,19 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
             fullyLock();
             try {
                 Node<E> p = head.next;
-                if (p == null) return "[]";
-
+                if (p == null) {
+                    return "[]";
+                }
                 StringBuilder sb = new StringBuilder();
                 sb.append('[');
                 for (; ; ) {
                     E e = p.item;
                     sb.append(e == this ? "(this Collection)" : e);
                     p = p.next;
-                    if (p == null) return sb.append(']').toString();
-                    sb.append(',').append(' ');
+                    if (p == null) {
+                        return sb.append(']').toString();
+                    }
+                    sb.append(", ");
                 }
             } finally {
                 fullyUnlock();
@@ -758,7 +817,9 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
                 int size = count.get();
                 Object[] a = new Object[size];
                 int k = 0;
-                for (Node<E> p = head.next; p != null; p = p.next) a[k++] = p.item;
+                for (Node<E> p = head.next; p != null; p = p.next) {
+                    a[k++] = p.item;
+                }
                 return a;
             } finally {
                 fullyUnlock();
@@ -770,11 +831,16 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
             fullyLock();
             try {
                 int size = count.get();
-                if (a.length < size)
-                    a = (T[]) java.lang.reflect.Array.newInstance(a.getClass().getComponentType(), size);
+                if (a.length < size) {
+                    a = (T[]) Array.newInstance(a.getClass().getComponentType(), size);
+                }
                 int k = 0;
-                for (Node<E> p = head.next; p != null; p = p.next) a[k++] = (T) p.item;
-                if (a.length > k) a[k] = null;
+                for (Node<E> p = head.next; p != null; p = p.next) {
+                    a[k++] = (T) p.item;
+                }
+                if (a.length > k) {
+                    a[k] = null;
+                }
                 return a;
             } finally {
                 fullyUnlock();
@@ -808,7 +874,9 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
                 fullyLock();
                 try {
                     current = head.next;
-                    if (current != null) currentElement = current.item;
+                    if (current != null) {
+                        currentElement = current.item;
+                    }
                 } finally {
                     fullyUnlock();
                 }
@@ -827,8 +895,12 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
             private Node<E> nextNode(Node<E> p) {
                 for (; ; ) {
                     Node<E> s = p.next;
-                    if (s == p) return head.next;
-                    if (s == null || s.item != null) return s;
+                    if (s == p) {
+                        return head.next;
+                    }
+                    if (s == null || s.item != null) {
+                        return s;
+                    }
                     p = s;
                 }
             }
@@ -836,7 +908,9 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
             public E next() {
                 fullyLock();
                 try {
-                    if (current == null) throw new NoSuchElementException();
+                    if (current == null) {
+                        throw new NoSuchElementException();
+                    }
                     E x = currentElement;
                     lastRet = current;
                     current = nextNode(current);
@@ -848,7 +922,9 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
             }
 
             public void remove() {
-                if (lastRet == null) throw new IllegalStateException();
+                if (lastRet == null) {
+                    throw new IllegalStateException();
+                }
                 fullyLock();
                 try {
                     Node<E> node = lastRet;
@@ -891,7 +967,7 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
          *
          * @return a subQueue
          */
-        LinkedBlockingMultiQueue.SubQueue getNext();
+        LinkedBlockingMultiQueue<K, E>.SubQueue getNext();
 
         /**
          * Returns the next element from the queue but keeps it in the queue.

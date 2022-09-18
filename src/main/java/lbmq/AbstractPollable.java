@@ -29,8 +29,10 @@ public abstract class AbstractPollable<E> implements Pollable<E> {
      */
     public E remove() {
         E x = poll();
-        if (x != null) return x;
-        else throw new NoSuchElementException();
+        if (x == null) {
+            throw new NoSuchElementException();
+        }
+        return x;
     }
 
     /**
@@ -44,7 +46,9 @@ public abstract class AbstractPollable<E> implements Pollable<E> {
      */
     public E element() {
         E x = peek();
-        if (x != null) return x;
-        else throw new NoSuchElementException();
+        if (x == null) {
+            throw new NoSuchElementException();
+        }
+        return x;
     }
 }

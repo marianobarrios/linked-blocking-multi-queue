@@ -22,12 +22,14 @@ import java.util.Queue;
 public abstract class AbstractOfferable<E> extends AbstractCollection<E> implements Offerable<E> {
 
     public boolean add(E e) {
-        if (offer(e)) return true;
-        else throw new IllegalStateException("Queue full");
+        if (!offer(e)) {
+            throw new IllegalStateException("Queue full");
+        }
+        return true;
     }
 
     /**
-     * Adds all of the elements in the specified collection to this queue. Attempts to addAll of a
+     * Adds all the elements in the specified collection to this queue. Attempts to addAll of a
      * queue to itself result in <code>IllegalArgumentException</code>. Further, the behavior of this
      * operation is undefined if the specified collection is modified while the operation is in
      * progress.
@@ -50,10 +52,18 @@ public abstract class AbstractOfferable<E> extends AbstractCollection<E> impleme
      * @see #add(Object)
      */
     public boolean addAll(Collection<? extends E> c) {
-        if (c == null) throw new NullPointerException();
-        if (c == this) throw new IllegalArgumentException();
+        if (c == null) {
+            throw new NullPointerException();
+        }
+        if (c == this) {
+            throw new IllegalArgumentException();
+        }
         boolean modified = false;
-        for (E e : c) if (add(e)) modified = true;
+        for (E e : c) {
+            if (add(e)) {
+                modified = true;
+            }
+        }
         return modified;
     }
 }
