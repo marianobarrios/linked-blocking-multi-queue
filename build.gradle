@@ -2,13 +2,29 @@ plugins {
     id 'java'
     id 'signing'
     id 'maven-publish'
-    id "com.diffplug.spotless" version "6.13.0"
+    id "com.diffplug.spotless" version "6.25.0"
+}
+
+var javaToolchain = System.getenv('JAVA_TOOLCHAIN')
+
+java {
+    if (javaToolchain != null) {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(javaToolchain)
+        }
+    }
 }
 
 compileJava {
-    if (JavaVersion.current().ordinal() > JavaVersion.VERSION_1_8.ordinal()) {
-        options.compilerArgs.addAll(['--release', '8'])
-    }
+    sourceCompatibility = '8'
+    targetCompatibility = '8'
+    options.compilerArgs.add('-Xlint')
+}
+
+compileTestJava {
+    sourceCompatibility = '8'
+    targetCompatibility = '8'
+    options.compilerArgs.add('-Xlint')
 }
 
 repositories {
@@ -22,7 +38,8 @@ dependencies {
 
 spotless {
     java {
-        palantirJavaFormat()
+        // remove when spotless moved to this Palantir version
+        palantirJavaFormat("2.38.0")
     }
 }
 
