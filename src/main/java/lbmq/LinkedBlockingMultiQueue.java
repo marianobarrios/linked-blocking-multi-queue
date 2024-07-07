@@ -165,7 +165,7 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
                 if (nextIdx == queues.size()) {
                     nextIdx = 0;
                 }
-                if (child.enabled && child.size() > 0) {
+                if (child.enabled && !child.isEmpty()) {
                     return child;
                 }
             } while (nextIdx != startIdx);
@@ -182,7 +182,7 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
                 if (nextIdx == queues.size()) {
                     nextIdx = 0;
                 }
-                if (child.enabled && child.size() > 0) {
+                if (child.enabled && !child.isEmpty()) {
                     emptyQueues = 0;
                     c.add(child.dequeue());
                     drained += 1;
@@ -202,7 +202,7 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
             int startIdx = nextIdx;
             do {
                 SubQueue child = queues.get(nextIdx);
-                if (child.enabled && child.size() > 0) {
+                if (child.enabled && !child.isEmpty()) {
                     return child.head.next.item;
                 } else {
                     nextIdx += 1;
@@ -282,7 +282,7 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
             SubQueue removed = subQueues.remove(key);
             if (removed != null) {
                 removed.priorityGroup.removeQueue(removed);
-                if (removed.priorityGroup.queues.size() == 0) {
+                if (removed.priorityGroup.queues.isEmpty()) {
                     this.priorityGroups.remove(removed.priorityGroup);
                 }
             }
