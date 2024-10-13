@@ -117,7 +117,7 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
     }
 
     /** Set of sub-queues with the same priority */
-    class PriorityGroup {
+    public class PriorityGroup {
 
         final int priority;
         final ArrayList<SubQueue> queues = new ArrayList<>(0);
