@@ -4,8 +4,8 @@ _Linked Blocking Multi Queue_ is a concurrent collection that extends the existi
 
 [![Build Status](https://github.com/marianobarrios/linked-blocking-multi-queue/actions/workflows/main.yml/badge.svg)](https://github.com/marianobarrios/linked-blocking-multi-queue/actions)
 
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.marianobarrios/linked-blocking-multi-queue/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.github.marianobarrios/linked-blocking-multi-queue)
-[![javadoc](https://javadoc.io/badge2/com.github.marianobarrios/linked-blocking-multi-queue/javadoc.svg)](https://javadoc.io/doc/com.github.marianobarrios/linked-blocking-multi-queue)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.github.marianobarrios/lbmq/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.github.marianobarrios/lbmq)
+[![javadoc](https://javadoc.io/badge2/com.github.marianobarrios/lbmq/javadoc.svg)](https://javadoc.io/doc/com.github.marianobarrios/linked-blocking-multi-queue)
 
 ## Rationale
 
