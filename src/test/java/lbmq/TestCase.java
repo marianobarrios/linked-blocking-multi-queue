@@ -7,7 +7,7 @@ package lbmq;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -16,8 +16,8 @@ import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
-import junit.framework.AssertionFailedError;
-import org.junit.After;
+import org.junit.jupiter.api.AfterAll;
+import org.opentest4j.AssertionFailedError;
 
 /**
  * Base class for the LinkedBlockingMultiQueue tests. Defines some constants, utility methods and
@@ -67,7 +67,7 @@ public class TestCase {
     }
 
     /** The first exception encountered if any threadAssertXXX method fails. */
-    private final AtomicReference<Throwable> threadFailure = new AtomicReference<>(null);
+    private static final AtomicReference<Throwable> threadFailure = new AtomicReference<>(null);
 
     /**
      * Records an exception so that it can be rethrown later in the test harness thread, triggering a
@@ -86,8 +86,8 @@ public class TestCase {
      *
      * <p>Triggers test case failure if interrupt status is set in the main thread.
      */
-    @After
-    public void tearDown() throws Exception {
+    @AfterAll
+    public static void tearDown() throws Exception {
         Throwable t = threadFailure.getAndSet(null);
         if (t != null) {
             if (t instanceof Error) {
@@ -97,9 +97,7 @@ public class TestCase {
             } else if (t instanceof Exception) {
                 throw (Exception) t;
             } else {
-                AssertionFailedError afe = new AssertionFailedError(t.toString());
-                afe.initCause(t);
-                throw afe;
+                throw new AssertionFailedError(t.toString(), t);
             }
         }
         if (Thread.interrupted()) {
@@ -132,9 +130,7 @@ public class TestCase {
         } else if (t instanceof Error) {
             throw (Error) t;
         } else {
-            AssertionFailedError afe = new AssertionFailedError("unexpected exception: " + t);
-            afe.initCause(t);
-            throw afe;
+            throw new AssertionFailedError("unexpected exception: " + t, t);
         }
     }
 

@@ -6,7 +6,7 @@
 package lbmq;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -16,7 +16,7 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class LinkedBlockingMultiQueueTest extends TestCase {
 
@@ -102,9 +102,10 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
     }
 
     /** Constructor throws IllegalArgumentException if capacity argument nonpositive */
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testConstructor2() {
-        createSingleQueue(0);
+        assertThrows(IllegalArgumentException.class, () -> createSingleQueue(0));
+        ;
     }
 
     /**
@@ -116,19 +117,19 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
     }
 
     /** offer(null) throws NullPointerException */
-    @Test(expected = NullPointerException.class)
+    @Test
     public void testOfferNull() {
         final LinkedBlockingMultiQueue<QueueKey, ?> q = createSingleQueue();
         LinkedBlockingMultiQueue<QueueKey, ?>.SubQueue sq = q.getSubQueue(QueueKey.A);
-        sq.offer(null);
+        assertThrows(NullPointerException.class, () -> sq.offer(null));
     }
 
     /** add(null) throws NullPointerException */
-    @Test(expected = NullPointerException.class)
+    @Test
     public void testAddNull() {
         final LinkedBlockingMultiQueue<QueueKey, ?> q = createSingleQueue();
         LinkedBlockingMultiQueue<QueueKey, ?>.SubQueue sq = q.getSubQueue(QueueKey.A);
-        sq.add(null);
+        assertThrows(NullPointerException.class, () -> sq.add(null));
     }
 
     /** timed offer(null) throws NullPointerException */
@@ -147,50 +148,50 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
     }
 
     /** put(null) throws NullPointerException */
-    @Test(expected = NullPointerException.class)
-    public void testPutNull() throws InterruptedException {
+    @Test
+    public void testPutNull() {
         final LinkedBlockingMultiQueue<QueueKey, ?> q = createSingleQueue();
         LinkedBlockingMultiQueue<QueueKey, ?>.SubQueue sq = q.getSubQueue(QueueKey.A);
-        sq.put(null);
+        assertThrows(NullPointerException.class, () -> sq.put(null));
     }
 
     /** put(null) throws NullPointerException */
-    @Test(expected = NullPointerException.class)
-    public void testAddAllNull() throws InterruptedException {
+    @Test
+    public void testAddAllNull() {
         final LinkedBlockingMultiQueue<QueueKey, ?> q = createSingleQueue();
         LinkedBlockingMultiQueue<QueueKey, ?>.SubQueue sq = q.getSubQueue(QueueKey.A);
-        sq.addAll(null);
+        assertThrows(NullPointerException.class, () -> sq.addAll(null));
     }
 
     /** addAll of a collection with null elements throws NullPointerException */
-    @Test(expected = NullPointerException.class)
+    @Test
     public void testAddAllNullElements() {
         final LinkedBlockingMultiQueue<QueueKey, Integer> q = createSingleQueue();
         LinkedBlockingMultiQueue<QueueKey, Integer>.SubQueue sq = q.getSubQueue(QueueKey.A);
         final Collection<Integer> elements = Arrays.asList(new Integer[SIZE]);
-        sq.addAll(elements);
+        assertThrows(NullPointerException.class, () -> sq.addAll(elements));
     }
 
     /** toArray(null) throws NullPointerException */
-    @Test(expected = NullPointerException.class)
+    @Test
     public void testToArray_NullArray() {
         LinkedBlockingMultiQueue<QueueKey, Integer> q = createSingleQueue();
         LinkedBlockingMultiQueue<QueueKey, Integer>.SubQueue sq = q.getSubQueue(QueueKey.A);
-        sq.toArray((Object[]) null);
+        assertThrows(NullPointerException.class, () -> sq.toArray((Object[]) null));
     }
 
     /** drainTo(null) throws NullPointerException */
-    @Test(expected = NullPointerException.class)
+    @Test
     public void testDrainToNull() {
         LinkedBlockingMultiQueue<QueueKey, ?> q = createSingleQueue();
-        q.drainTo(null);
+        assertThrows(NullPointerException.class, () -> q.drainTo(null));
     }
 
     /** drainTo(null, n) throws NullPointerException */
-    @Test(expected = NullPointerException.class)
+    @Test
     public void testDrainToNullN() {
         LinkedBlockingMultiQueue<QueueKey, ?> q = createSingleQueue();
-        q.drainTo(null, 0);
+        assertThrows(NullPointerException.class, () -> q.drainTo(null, 0));
     }
 
     /** drainTo(c, n) returns 0 and does nothing when n <= 0 */
@@ -445,7 +446,7 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
         LinkedBlockingMultiQueue<QueueKey, Integer>.SubQueue sq = q.getSubQueue(QueueKey.A);
         assertTrue(q.isEmpty());
         assertTrue(sq.isEmpty());
-        assertEquals("should have room for 2", 2, sq.remainingCapacity());
+        assertEquals(2, sq.remainingCapacity());
         assertTrue(sq.offer(one));
         assertFalse(q.isEmpty());
         assertFalse(sq.isEmpty());
@@ -483,7 +484,7 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
     }
 
     /** add succeeds if not full; throws IllegalStateException if full */
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void testAdd() {
         LinkedBlockingMultiQueue<QueueKey, Integer> q = createSingleQueue(SIZE);
         LinkedBlockingMultiQueue<QueueKey, Integer>.SubQueue sq = q.getSubQueue(QueueKey.A);
@@ -491,21 +492,21 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
             assertTrue(sq.add(i));
         }
         assertEquals(0, sq.remainingCapacity());
-        sq.add(SIZE);
+        assertThrows(IllegalStateException.class, () -> sq.add(SIZE));
     }
 
     /** addAll(this) throws IllegalArgumentException */
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testAddAllSelf() {
         LinkedBlockingMultiQueue<QueueKey, Integer> q = populatedSingleQueue(SIZE);
         LinkedBlockingMultiQueue<QueueKey, Integer>.SubQueue sq = q.getSubQueue(QueueKey.A);
-        sq.addAll(sq);
+        assertThrows(IllegalArgumentException.class, () -> sq.addAll(sq));
     }
 
     /**
      * addAll of a collection with any null elements throws NPE after possibly adding some elements
      */
-    @Test(expected = NullPointerException.class)
+    @Test
     public void testAddAll3() {
         LinkedBlockingMultiQueue<QueueKey, Integer> q = createSingleQueue(SIZE);
         LinkedBlockingMultiQueue<QueueKey, Integer>.SubQueue sq = q.getSubQueue(QueueKey.A);
@@ -514,11 +515,11 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
             ints[i] = i;
         }
         Collection<Integer> elements = Arrays.asList(ints);
-        sq.addAll(elements);
+        assertThrows(NullPointerException.class, () -> sq.addAll(elements));
     }
 
     /** addAll throws IllegalStateException if not enough room */
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void testAddAll4() {
         LinkedBlockingMultiQueue<QueueKey, Integer> q = createSingleQueue(SIZE - 1);
         LinkedBlockingMultiQueue<QueueKey, Integer>.SubQueue sq = q.getSubQueue(QueueKey.A);
@@ -527,7 +528,7 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
             ints[i] = i;
         }
         Collection<Integer> elements = Arrays.asList(ints);
-        sq.addAll(elements);
+        assertThrows(IllegalStateException.class, () -> sq.addAll(elements));
     }
 
     /** Queue contains all elements, in traversal order, of successful addAll */
@@ -864,25 +865,25 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
     }
 
     /** element returns next element, or throws NSEE if empty */
-    @Test(expected = NoSuchElementException.class)
+    @Test
     public void testElement() {
         LinkedBlockingMultiQueue<QueueKey, Integer> q = populatedSingleQueue(SIZE);
         for (int i = 0; i < SIZE; ++i) {
             assertEquals(i, q.element().intValue());
             assertEquals(i, q.poll().intValue());
         }
-        q.element();
+        assertThrows(NoSuchElementException.class, () -> q.element());
     }
 
     /** element returns next element, or throws NSEE if empty */
-    @Test(expected = NoSuchElementException.class)
+    @Test
     public void testElementMulti() {
         LinkedBlockingMultiQueue<QueueKey, Integer> q = populatedMultiQueue();
         for (int i = 0; i < nine; ++i) {
             assertEquals(i, q.element().intValue());
             assertEquals(i, q.poll().intValue());
         }
-        q.element();
+        assertThrows(NoSuchElementException.class, () -> q.element());
     }
 
     /** element returns next element, or throws NSEE if empty */
@@ -915,23 +916,23 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
     }
 
     /** removes next element, or throws NSEE if empty */
-    @Test(expected = NoSuchElementException.class)
+    @Test
     public void testRemove() {
         final LinkedBlockingMultiQueue<QueueKey, Integer> q = populatedSingleQueue(SIZE);
         for (int i = 0; i < SIZE; ++i) {
             assertEquals(i, q.remove().intValue());
         }
-        q.remove();
+        assertThrows(NoSuchElementException.class, () -> q.remove());
     }
 
     /** removes next element, or throws NSEE if empty */
-    @Test(expected = NoSuchElementException.class)
+    @Test
     public void testRemoveMulti() {
         final LinkedBlockingMultiQueue<QueueKey, Integer> q = populatedMultiQueue();
         for (int i = 0; i < nine; ++i) {
             assertEquals(i, q.remove().intValue());
         }
-        q.remove();
+        assertThrows(NoSuchElementException.class, () -> q.remove());
     }
 
     /** An add following remove(x) succeeds */
@@ -1058,11 +1059,11 @@ public class LinkedBlockingMultiQueueTest extends TestCase {
     }
 
     /** toArray(incompatible array type) throws ArrayStoreException */
-    @Test(expected = ArrayStoreException.class)
+    @Test
     public void testToArray1_BadArg() {
         final LinkedBlockingMultiQueue<QueueKey, Integer> q = populatedSingleQueue(SIZE);
         final LinkedBlockingMultiQueue<QueueKey, Integer>.SubQueue sq = q.getSubQueue(QueueKey.A);
-        sq.toArray(new String[10]);
+        assertThrows(ArrayStoreException.class, () -> sq.toArray(new String[10]));
     }
 
     /** iterator iterates through all elements */
