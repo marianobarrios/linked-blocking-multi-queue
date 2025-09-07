@@ -6,28 +6,16 @@ plugins {
     id "com.diffplug.spotless" version "7.2.1"
 }
 
-var javaToolchain = System.getenv('JAVA_TOOLCHAIN')
-
-java {
-    if (javaToolchain != null) {
-        toolchain {
-            languageVersion = JavaLanguageVersion.of(javaToolchain)
-        }
-    }
-}
-
 compileJava {
-    if (javaToolchain != "8") {
-        options.release = 8
-    }
-    options.compilerArgs.add('-Xlint')
+    options.release = 8
+    // for some reason javac warns the previous option, disabling
+    options.compilerArgs.add('-Xlint:all,-options')
 }
 
 compileTestJava {
-    if (javaToolchain != "8") {
-        options.release = 8
-    }
-    options.compilerArgs.add('-Xlint')
+    options.release = 8
+    // for some reason javac warns the previous option, disabling
+    options.compilerArgs.add('-Xlint:all,-options')
 }
 
 repositories {
@@ -48,6 +36,17 @@ testing {
     suites {
         test {
             useJUnitJupiter()
+            targets {
+                all {
+                    testTask.configure {
+                        javaLauncher.set(
+                                javaToolchains.launcherFor {
+                                    languageVersion.set(JavaLanguageVersion.of(System.getenv('TEST_JAVA_TOOLCHAIN')))
+                                }
+                        )
+                    }
+                }
+            }
         }
     }
 }
