@@ -80,9 +80,8 @@ publishing {
                     }
                 }
                 scm {
-                    url = 'scm:git@github.com:marianobarrios/lbmq.git'
-                    connection = 'scm:git@github.com:marianobarrios/lbmq.git'
-                    developerConnection = 'scm:git@github.com:marianobarrios/lbmq.git'
+                    url = 'https://github.com/marianobarrios/linked-blocking-multi-queue'
+                    connection = 'scm:git@github.com:marianobarrios/linked-blocking-multi-queue.git'
                 }
             }
         }
