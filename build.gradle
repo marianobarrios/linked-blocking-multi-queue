@@ -1,18 +1,21 @@
 plugins {
     id 'java'
     id 'jvm-test-suite'
-    id 'signing'
     id 'maven-publish'
     id "com.diffplug.spotless" version "8.4.0"
+    id 'org.jreleaser' version '1.23.0'
 }
 
-compileJava {
+group = 'com.github.marianobarrios'
+version = System.getenv('VERSION')
+
+tasks.named('compileJava') {
     options.release = 8
     // for some reason javac warns the previous option, disabling
     options.compilerArgs.add('-Xlint:all,-options')
 }
 
-compileTestJava {
+tasks.named('compileTestJava') {
     options.release = 8
     // for some reason javac warns the previous option, disabling
     options.compilerArgs.add('-Xlint:all,-options')
@@ -58,9 +61,7 @@ testing {
 publishing {
     publications {
         lbmq(MavenPublication) {
-            groupId = 'com.github.marianobarrios'
             artifactId = 'lbmq'
-            version = '0.7.0'
             from components.java
             pom {
                 name = 'Linked Blocking Multi-Queue'
@@ -82,21 +83,32 @@ publishing {
                 scm {
                     url = 'https://github.com/marianobarrios/linked-blocking-multi-queue'
                     connection = 'scm:git@github.com:marianobarrios/linked-blocking-multi-queue.git'
+                    developerConnection = 'scm:git@github.com:marianobarrios/linked-blocking-multi-queue.git'
                 }
             }
         }
     }
     repositories {
         maven {
-            url = 'https://oss.sonatype.org/service/local/staging/deploy/maven2/'
-            credentials {
-                username = project.findProperty('sonatypeUsername')
-                password = project.findProperty('sonatypePassword')
-            }
+            url = layout.buildDirectory.dir('staging-deploy')
         }
     }
 }
 
-signing {
-    sign publishing.publications.lbmq
+jreleaser {
+    signing {
+        active = 'ALWAYS'
+        armored = true
+    }
+    deploy {
+        maven {
+            mavenCentral {
+                sonatype {
+                    active = 'RELEASE'
+                    url = 'https://central.sonatype.com/api/v1/publisher'
+                    stagingRepository('build/staging-deploy')
+                }
+            }
+        }
+    }
 }
