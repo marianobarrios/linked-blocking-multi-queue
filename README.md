@@ -31,14 +31,14 @@ Multiple queues (instead of just one collecting everything) are usually necessar
 
 ## Example
 
-The multi-queue has a no-argument constructor. The class as two type arguments. The first one is the type of the queue key, that is, the type of the values used as keys to identify each sub-queue. The second is the element type. Sub-queues are created from it in a second step:
+The multi-queue has a no-argument constructor. The class has two type arguments. The first one is the type of the queue key, that is, the type of the values used as keys to identify each sub-queue. The second is the element type. Sub-queues are created from it in a second step:
 
 ```java
-LinkedBlockingMultiQueue<Int, String> q = new LinkedBlockingMultiQueue<>();
+LinkedBlockingMultiQueue<Integer, String> q = new LinkedBlockingMultiQueue<>();
 q.addSubQueue(1 /* key */, 10 /* priority */);
 q.addSubQueue(2 /* key */, 10 /* priority */, 10000 /* capacity */);
-LinkedBlockingMultiQueue<Int, String>.SubQueue sq1 = q.getSubQueue(1);
-LinkedBlockingMultiQueue<Int, String>.SubQueue sq2 = q.getSubQueue(2);
+LinkedBlockingMultiQueue<Integer, String>.SubQueue sq1 = q.getSubQueue(1);
+LinkedBlockingMultiQueue<Integer, String>.SubQueue sq2 = q.getSubQueue(2);
 ```
 
 Then it is possible to offer and poll:
@@ -61,8 +61,8 @@ The factory method for sub-queues has an optional capacity argument, as a way to
 Sub-queues can have different priorities, meaning that elements from higher priority queues will be offered first to consumers. Inside the same priority queues are drained round-robin.
 
 ### Enabling, disabling, adding and removing queues
-``
-A special feature is that individual queues can be enabled or disabled. A disabled queue is not considered for polling (in the event that all the queue are disabled, any blocking operation would do so trying to read, as if all the queues were empty). Elements are taken from the set of enabled queues ()obeying the established priority).
+
+A special feature is that individual queues can be enabled or disabled. A disabled queue is not considered for polling (in the event that all the queues are disabled, any blocking operation would do so trying to read, as if all the queues were empty). Elements are taken from the set of enabled queues (obeying the established priority).
 
 A disabled queue accepts new elements normally until it reaches the maximum capacity (if any).
 

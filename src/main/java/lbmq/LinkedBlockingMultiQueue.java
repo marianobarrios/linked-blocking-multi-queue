@@ -26,7 +26,7 @@ import java.util.concurrent.locks.ReentrantLock;
  *
  * <p>This class essentially allows a consumer to efficiently block a single thread on a set of
  * queues, until one becomes available. The special feature is that individual queues can be enabled
- * or disabled. A disabled queue is not considered for polling (in the event that all the queue are
+ * or disabled. A disabled queue is not considered for polling (in the event that all the queues are
  * disabled, any blocking operation would do so trying to read, as if all the queues were empty).
  * Elements are taken from the set of enabled queues, obeying the established priority (queues with
  * the same priority are served round-robin).
@@ -36,7 +36,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * <p>Individual queues can be added, removed, enabled or disabled at any time.
  *
  * <p>The optional capacity bound constructor argument serves as a way to prevent excessive queue
- * expansion. The capacity, if unspecified, is equal to Int.MaxVaue. Linked nodes are dynamically
+ * expansion. The capacity, if unspecified, is equal to Integer.MAX_VALUE. Linked nodes are dynamically
  * created upon each insertion unless this would bring the queue above capacity.
  *
  * <p>Not being actually a linear queue, this class does not implement the {@code Collection} or
@@ -273,7 +273,7 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
     /**
      * Remove a sub-queue
      *
-     * @param key the key f the sub-queue that should be removed
+     * @param key the key of the sub-queue that should be removed
      * @return the removed SubQueue or null if the key was not in the map
      */
     public SubQueue removeSubQueue(K key) {
@@ -295,7 +295,7 @@ public class LinkedBlockingMultiQueue<K, E> extends AbstractPollable<E> {
     /**
      * Gets a sub-queue
      *
-     * @param key the key f the sub-queue that should be returned
+     * @param key the key of the sub-queue that should be returned
      * @return the sub-queue with the corresponding key or null if it does not exist
      */
     public SubQueue getSubQueue(K key) {
