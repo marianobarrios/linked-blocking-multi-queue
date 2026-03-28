@@ -1,5 +1,21 @@
 {
   "extends": [
-"config:recommended"
+    "config:recommended"
+  ],
+  "internalChecksFilter": "strict",
+  "packageRules": [
+    {
+      "minimumReleaseAge": "7 days",
+      "matchPackageNames": [
+        "/.*/"
+      ]
+    },
+    {
+      "matchUpdateTypes": ["major"],
+      "enabled": false,
+      "matchPackageNames": [
+        "/^com\\.diffplug\\.spotless/"
+      ]
+    }
   ]
 }
