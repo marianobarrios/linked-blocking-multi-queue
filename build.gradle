@@ -3,7 +3,7 @@ plugins {
     id 'jvm-test-suite'
     id 'maven-publish'
     id "com.diffplug.spotless" version "7.2.1" // jrelease fails with 8.0.x
-    id 'org.jreleaser' version '1.23.0'
+    id 'org.jreleaser' version '1.26.0'
 }
 
 group = 'com.github.marianobarrios'
